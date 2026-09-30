@@ -13,22 +13,49 @@ Run from `src/Tectonic.API`, not the repository root, when using that default.
 
 ## Configuration reference
 
-Environment settings use ASP.NET's `__` separator. Webapp flat settings
-`API_BASE_URL` and `API_USE_MOCK` are also supported.
+The shared `.env` uses SCREAMING_SNAKE_CASE. Both applications load it locally
+without replacing injected environment values. Uppercase application settings
+take precedence over JSON defaults and older namespaced settings.
 
 | Key | Meaning |
 |---|---|
-| `ConnectionStrings__Application` | Integrated SQLite connection; default `Data Source=tectonic.db` |
-| `Jwt__SigningKey` | Base64 of at least 32 random bytes; required to start API |
-| `Jwt__Issuer` / `Jwt__Audience` | Defaults `expense-watch` / `expense-watch-web` |
-| `WebAppOrigin` | Optional exact origin for direct browser API calls |
-| `API_BASE_URL` or `Api__BaseUrl` | Webapp's API URL; required in real mode, trailing slash mandatory |
-| `API_USE_MOCK` or `Api__UseMock` | Webapp canned-data mode; false for API integration |
+| `DATABASE_CONNECTION_STRING` | Integrated SQLite connection; default `Data Source=tectonic.db` |
+| `AUTHENTICATION_LOCAL_JWT_KEY` | Base64 of at least 32 random bytes; required to start API |
+| `AUTHENTICATION_LOCAL_JWT_ISSUER` / `AUTHENTICATION_LOCAL_JWT_AUDIENCE` | Defaults `expense-watch` / `expense-watch-web` |
+| `WEB_APP_ORIGIN` | Optional exact origin for direct browser API calls |
+| `API_BASE_URL` | Webapp's API URL; required in real mode, trailing slash mandatory |
+| `API_USE_MOCK` | Webapp canned-data mode; false for API integration |
 | `WEB_PORT` | Root Compose web host port; default 8080 |
 | `DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE` | Set false for a stable demo or exhausted inotify quota |
 
-Choose one naming form for the web settings. Namespaced values take precedence
-when both forms are supplied.
+`.env.example` includes email, simulator, JWT issuer/audience, database, listener,
+and optional development demo-login settings. Empty SMTP credentials are valid
+for the hosted Mailpit HTTP transport. A simulator password is needed when
+`SIMULATOR_ENABLED=true` and `SIMULATOR_ALL_USERS=false`.
+
+### Coolify: same environment for API and Blazor
+
+1. Use the ignored root `.env`, not `.env.example`: the example deliberately
+   contains no secrets. Generate a stable `AUTHENTICATION_LOCAL_JWT_KEY` using
+   `openssl rand -base64 32` if the private file does not already contain one.
+2. Set `API_BASE_URL` to the API's HTTPS domain or Docker-network URL reachable
+   from the Blazor container, with a trailing `/`. Do not use loopback for
+   communication between separate containers.
+3. Paste the whole `.env` into both Coolify applications' runtime environment.
+   Unused application settings are ignored. Blazor uses the JWT returned by API
+   login; it does not sign tokens with the shared key.
+4. Set each application's container port to **8080** and mount persistent
+   writable storage at **/data** on the API. The shared database setting is
+   `Data Source=/data/tectonic.db`. Both containers can use 8080 independently.
+5. Redeploy images containing these configuration changes. Leave
+   `SIMULATOR_ENABLED=false` for manual demos, or enable it with a stable
+   Identity-compliant `SIMULATOR_PASSWORD`. Its loopback URL stays
+   `http://127.0.0.1:8080`, not the public API domain.
+
+For local API runs on port 5000, override `DATABASE_CONNECTION_STRING` with
+`Data Source=tectonic.db` and `SIMULATOR_BASE_URL` with
+`http://127.0.0.1:5000`. `WEB_APP_ORIGIN` is optional: Blazor Server calls the API
+server-side and does not require browser CORS.
 
 ### Secrets and restarts
 
@@ -54,12 +81,12 @@ mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025
 For SMTP delivery, inject:
 
 ```sh
-export Email__MailpitUrl=""
-export Email__Host=127.0.0.1
-export Email__Port=1025
-export Email__EnableSsl=false
-export Email__From=expense-watch@example.test
-export Email__Recipient=presenter@example.test
+export EMAIL_MAILPIT_URL=""
+export EMAIL_HOST=127.0.0.1
+export EMAIL_PORT=1025
+export EMAIL_ENABLE_SSL=false
+export EMAIL_FROM=expense-watch@example.test
+export EMAIL_RECIPIENT=presenter@example.test
 ```
 
 Then start the API. Open <http://127.0.0.1:8025> to inspect received messages.
@@ -67,7 +94,7 @@ Then start the API. Open <http://127.0.0.1:8025> to inspect received messages.
 For HTTP delivery to that inbox instead, set:
 
 ```sh
-export Email__MailpitUrl=http://127.0.0.1:8025
+export EMAIL_MAILPIT_URL=http://127.0.0.1:8025
 ```
 
 A nonempty Mailpit URL selects its `/api/v1/send` HTTP endpoint rather than SMTP.
@@ -76,9 +103,9 @@ inbox is for invented demo data, not real financial records.
 
 ### SMTP relay
 
-Set `Email__Host`, `Email__Port`, `Email__EnableSsl`, `Email__From` and
-`Email__Recipient`. If authentication is needed, inject `Email__Username` and
-`Email__Password`; do not commit them. Leave `Email__MailpitUrl` empty.
+Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_ENABLE_SSL`, `EMAIL_FROM` and
+`EMAIL_RECIPIENT`. If authentication is needed, inject `EMAIL_USERNAME` and
+`EMAIL_PASSWORD`; do not commit them. Leave `EMAIL_MAILPIT_URL` empty.
 SMTP uses a bounded timeout. Each notification's outcome is persisted separately.
 
 `pending` can remain after a crash. `failed` does not undo the transaction or
@@ -88,12 +115,13 @@ clock change. No automatic retry or replay is performed.
 
 | Key | Default |
 |---|---|
-| `Simulator__Enabled` | true |
-| `Simulator__IntervalSeconds` | 3 |
-| `Simulator__BaseUrl` | `http://127.0.0.1:5000` |
-| `Simulator__Email` | `simulator@example.test` |
-| `Simulator__Password` | No default; injected disposable account password |
-| `Simulator__RenewBeforeExpirySeconds` | 60 |
+| `SIMULATOR_ENABLED` | true |
+| `SIMULATOR_ALL_USERS` | false; opt-in generation for every account |
+| `SIMULATOR_INTERVAL_SECONDS` | 3 |
+| `SIMULATOR_BASE_URL` | `http://127.0.0.1:5000` |
+| `SIMULATOR_EMAIL` | `simulator@example.test` |
+| `SIMULATOR_PASSWORD` | No default; injected disposable account password |
+| `SIMULATOR_RENEW_BEFORE_EXPIRY_SECONDS` | 60 |
 
 The interval must be a positive supported integer. Renewal lead must be greater
 than zero and less than 3600 seconds. The base URL must be a loopback HTTP(S)
@@ -112,6 +140,27 @@ The worker waits for `ApplicationStarted`, never overlaps batches, and cancels
 on shutdown. It uses login or one signup attempt; incorrect existing credentials
 stop it rather than reset the account.
 
+For automatic transactions in newly created real accounts, set
+`SIMULATOR_ENABLED=true` and `SIMULATOR_ALL_USERS=true`. Each tick discovers
+accounts, issues a user-scoped token, and runs the same authenticated HTTP
+transaction/clock flow independently for each account. No user passwords are
+retained. This mode advances existing accounts too; do not manually advance or
+post transactions while it owns their clocks. Disable simulation for a controlled
+manual demo. The default single-account mode still uses the configured simulator
+credentials.
+If one account's request fails, only that account pauses until API restart;
+other accounts continue. Restart reads persisted history and skips stored rows,
+rather than immediately replaying an uncertain write.
+The real-mode Transactions page refreshes its history and logical date every
+three seconds while open, so new persisted transactions appear without reloading
+the browser.
+
+For local runs, use `DATABASE_CONNECTION_STRING=Data Source=tectonic.db`,
+`API_BASE_URL=http://127.0.0.1:5000/`, and
+`SIMULATOR_BASE_URL=http://127.0.0.1:5000`. If the hosted Mailpit domain's IPv6
+address is unreachable while IPv4 works, launch the API with
+`DOTNET_SYSTEM_NET_DISABLEIPV6=1`; keep certificate validation enabled.
+
 ### Guaranteed scenario
 
 | Stream | Schedule |
@@ -126,9 +175,24 @@ recurrence, increase and missing-month cases.
 
 ### Recording and recovery
 
-Use a separate presenter account or restart with `Simulator__Enabled=false`.
+In single-account mode, use a separate presenter account or restart with
+`SIMULATOR_ENABLED=false`.
 Never manually advance/post on the simulator identity while it is active.
 Other users have independent clocks.
+
+To view single-account simulation in the real webapp, use its account, not a
+presenter account. All-user mode generates payments for each account instead.
+In Development, opt in to `SIMULATOR_DEMO_LOGIN_ENABLED=true`
+and inject `SAMPLE_ACCOUNT_NAME`, `SAMPLE_ACCOUNT_EMAIL` and
+`SAMPLE_ACCOUNT_PASSWORD` into the webapp process. The email and password must
+match the API's simulator credentials. The login page's **Use demo account**
+button then authenticates through the real API. This opt-in is ignored outside
+Development. Keep the password in process environment or ignored `.env`.
+
+The real-mode payments page updates every three seconds. Click **Refresh
+payments** for an immediate update of rows and the current logical date. Simulator
+emails are sent when an enabled alert condition fires, not for every transaction;
+the first telecom increase and recurrence alerts occur on February 5.
 
 Watch `DayCompleted`, `TokenRenewed` and `SimulatorStopped`.
 Missing configuration, failed authentication, timeout or uncertain HTTP outcome
@@ -156,16 +220,16 @@ docker build -t expense-watch-web .
 docker network create expense-watch-demo
 docker volume create expense-watch-data
 
-# Inject Jwt__SigningKey in this shell first, as in the README.
+# Inject AUTHENTICATION_LOCAL_JWT_KEY in this shell first, as in the README.
 docker run --name expense-watch-api --network expense-watch-demo \
   -p 127.0.0.1:5000:8080 \
-  --env-file .env -e Jwt__SigningKey -e Simulator__Enabled=false \
+  --env-file .env -e AUTHENTICATION_LOCAL_JWT_KEY -e SIMULATOR_ENABLED=false \
   -v expense-watch-data:/data -d expense-watch-api
 
 docker run --name expense-watch-web --network expense-watch-demo \
   -p 127.0.0.1:8080:8080 \
-  -e Api__BaseUrl=http://expense-watch-api:8080/ \
-  -e Api__UseMock=false -d expense-watch-web
+  -e API_BASE_URL=http://expense-watch-api:8080/ \
+  --env-file .env -e API_USE_MOCK=false -d expense-watch-web
 ```
 
 This example assumes first-time network/container names and the example's
@@ -188,7 +252,7 @@ For an explicitly chosen fresh demo:
 
 1. Stop the API and simulator.
 2. Identify the exact configured database and preserve anything needed.
-3. Choose a new SQLite filename through `ConnectionStrings__Application`.
+3. Choose a new SQLite filename through `DATABASE_CONNECTION_STRING`.
 4. Start the API and sign up again.
 
 Using a new filename avoids accidental deletion. Do not remove another user's

@@ -177,7 +177,7 @@ public static class Texts
         ["sample.PaymentIncomplete"] = new("Incomplete payment", "Paiement incomplet", "Onvolledige betaling"),
 
         // Transactions
-        ["tx.addTitle"] = new("Add mock transaction", "Ajouter une transaction fictive", "Testtransactie toevoegen"),
+        ["tx.addTitle"] = new("Add transaction", "Ajouter une transaction", "Transactie toevoegen"),
         ["tx.type"] = new("Type", "Type", "Type"),
         ["tx.Expense"] = new("Expense", "Dépense", "Uitgave"),
         ["tx.Income"] = new("Income", "Revenu", "Inkomen"),
@@ -190,6 +190,7 @@ public static class Texts
         ["tx.description"] = new("Description", "Description", "Beschrijving"),
         ["tx.demoDate"] = new("Your demo date: {0}", "Votre date de démo : {0}", "Je demodatum: {0}"),
         ["tx.advance"] = new("Advance demo date", "Avancer la date de démo", "Demodatum vooruitzetten"),
+        ["tx.refresh"] = new("Refresh payments", "Actualiser les paiements", "Betalingen vernieuwen"),
         ["tx.add"] = new("Add", "Ajouter", "Toevoegen"),
         ["tx.added"] = new("Added: {0} at {1}", "Ajouté : {0} chez {1}", "Toegevoegd: {0} bij {1}"),
         ["tx.emailSent"] = new("Email sent: {0}", "E-mail envoyé : {0}", "E-mail verstuurd: {0}"),

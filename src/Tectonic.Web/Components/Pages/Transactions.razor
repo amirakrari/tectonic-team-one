@@ -1,4 +1,5 @@
 @page "/transactions"
+@implements IDisposable
 @inject IApiClient Api
 @inject Loc L
 @inject ISnackbar Snackbar
@@ -8,6 +9,10 @@
 <SectionContent SectionName="page-title">@L["page.transactions"]</SectionContent>
 
 <h1 class="page-heading">@L["page.transactions"]</h1>
+
+<MudButton OnClick="LoadAsync" Disabled="@_saving" StartIcon="@Icons.Material.Filled.Refresh" Class="mb-4">
+    @L["tx.refresh"]
+</MudButton>
 
 <MudPaper Outlined="true" Class="settings-card mb-6">
     <MudText Typo="Typo.h6" Class="card-title mb-2">@L["tx.addTitle"]</MudText>
@@ -64,25 +69,71 @@ else
     private DateTime? _date = DateTime.Today;
     private bool _saving;
     private DateOnly? _demoDate;
+    private readonly CancellationTokenSource _refreshCancellation = new();
+    private CancellationToken _refreshToken;
+    private bool _loading;
 
     protected override async Task OnInitializedAsync()
     {
+        _refreshToken = _refreshCancellation.Token;
         await LoadAsync();
+        if (_refreshToken.IsCancellationRequested) return;
         if (_demoDate is not null) _date = _demoDate.Value.ToDateTime(TimeOnly.MinValue);
+        if (!Api.IsMock) _ = RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_refreshToken))
+                await InvokeAsync(async () =>
+                {
+                    if (_saving || _refreshToken.IsCancellationRequested) return;
+                    await LoadAsync();
+                    if (!_refreshToken.IsCancellationRequested) StateHasChanged();
+                });
+        }
+        catch (OperationCanceledException) when (_refreshToken.IsCancellationRequested) { }
+    }
+
+    public void Dispose()
+    {
+        _refreshCancellation.Cancel();
+        _refreshCancellation.Dispose();
     }
 
     private async Task LoadAsync()
     {
+        if (_loading || _refreshToken.IsCancellationRequested) return;
+        _loading = true;
         try
         {
-            if (!Api.IsMock) _demoDate = await Api.GetDemoDateAsync();
-            _transactions = (await Api.GetTransactionsAsync()).OrderByDescending(t => t.Date).ToList();
+            var demoDate = _demoDate;
+            if (!Api.IsMock)
+            {
+                demoDate = await Api.GetDemoDateAsync();
+                if (_refreshToken.IsCancellationRequested) return;
+            }
+            var transactions = (await Api.GetTransactionsAsync()).OrderByDescending(t => t.Date).ToList();
+            if (_refreshToken.IsCancellationRequested) return;
+            if (!Api.IsMock && demoDate is { } currentDate)
+            {
+                var previousDate = _demoDate;
+                _demoDate = currentDate;
+                if (_date is not null && previousDate == DateOnly.FromDateTime(_date.Value))
+                    _date = currentDate.ToDateTime(TimeOnly.MinValue);
+            }
+            _transactions = transactions;
         }
         catch (Exception ex)
         {
+            if (_refreshToken.IsCancellationRequested) return;
             _transactions = [];
             Snackbar.Add(L.F("tx.loadError", ex.Message), Severity.Error);
         }
+        finally { _loading = false; }
     }
 
     private async Task AdvanceDateAsync()

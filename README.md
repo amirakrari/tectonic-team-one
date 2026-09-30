@@ -47,8 +47,9 @@ shell and start at the repository root.
 # Preserve an existing .env; copy the example only on the first run.
 test -f .env || cp .env.example .env
 
-export Jwt__SigningKey="$(openssl rand -base64 32)"
-export Simulator__Enabled=false
+export AUTHENTICATION_LOCAL_JWT_KEY="$(openssl rand -base64 32)"
+export SIMULATOR_ENABLED=false
+export DATABASE_CONNECTION_STRING="Data Source=tectonic.db"
 export DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
 ```
 
@@ -67,7 +68,7 @@ The API URL **must end with `/`**. Real mode uses the API and its persistent dat
 `API_USE_MOCK=true` uses canned webapp data without calling the API.
 
 The environment example selects a hosted Mailpit demo inbox through
-`Email__MailpitUrl`. Use only fictional data there. For a mailbox you control,
+`EMAIL_MAILPIT_URL`. Use only fictional data there. For a mailbox you control,
 configure [local Mailpit or SMTP](docs/OPERATIONS.md#email-delivery).
 Notifications go to the configured presenter mailbox, **not** the signup email.
 
@@ -88,7 +89,7 @@ dotnet run --no-build --configuration Release --no-launch-profile --urls http://
 ```
 
 The API initializes the integrated SQLite store and fixed lookup data. Missing or
-invalid `Jwt__SigningKey` prevents startup.
+invalid `AUTHENTICATION_LOCAL_JWT_KEY` prevents startup.
 
 ### 4. Start the webapp
 
@@ -167,8 +168,9 @@ and `/api/recurring-transactions`. The old company/expenseKey fields and
 Stop the API, then configure the **same terminal**:
 
 ```sh
-export Simulator__Enabled=true
-export Simulator__Password="$(openssl rand -hex 16)Aa1_"
+export SIMULATOR_ENABLED=true
+export SIMULATOR_PASSWORD="$(openssl rand -hex 16)Aa1_"
+export SIMULATOR_BASE_URL=http://127.0.0.1:5000
 ```
 
 Start the API again with the command above. Generate this password **once** and
@@ -180,6 +182,12 @@ API to start, authenticates, posts a day's transactions sequentially, then advan
 its account's date. It resumes from persisted history without replaying existing
 stream/date rows.
 
+To generate real persisted transactions for every account, including new
+signups, also set `SIMULATOR_ALL_USERS=true`. Each account keeps its own clock,
+history and notifications. The real-mode Transactions page refreshes every
+three seconds. This mode advances existing accounts too; use
+`SIMULATOR_ENABLED=false` before a controlled manual demo.
+
 The scenario contains:
 
 - Internet on day 5: EUR 45, then EUR 49, then a deliberately skipped month.
@@ -188,7 +196,7 @@ The scenario contains:
 
 Watch `DayCompleted`, `TokenRenewed`, and `SimulatorStopped` logs. A failure stops
 the worker without disabling the API. To return to manual-only operation, restart
-with `Simulator__Enabled=false`. See [simulator settings](docs/OPERATIONS.md#simulator).
+with `SIMULATOR_ENABLED=false`. See [simulator settings](docs/OPERATIONS.md#simulator).
 
 ## Repository layout
 
