@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ExpenseWatch.Api.Models.Domain;
 
 [Index(nameof(UserId), nameof(TransactionTypeId), nameof(CounterpartyKey),
-    nameof(TransactionKey), nameof(Currency), nameof(Date))]
+    nameof(TransactionKey), nameof(Currency), nameof(Date), IsUnique = true)]
 public sealed class Transaction
 {
     public int Id { get; set; }

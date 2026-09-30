@@ -9,7 +9,7 @@ namespace ExpenseWatch.Api.Services;
 
 public sealed class JwtTokenService(string issuer, string audience, SymmetricSecurityKey key)
 {
-    public TokenResponse Issue(IdentityUser user)
+    public TokenResponse Issue(IdentityUser user, IEnumerable<string> roles)
     {
         var issuedAt = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         var expiresAt = issuedAt.AddMinutes(60);
@@ -20,7 +20,8 @@ public sealed class JwtTokenService(string issuer, string audience, SymmetricSec
             new Claim(JwtRegisteredClaimNames.Iat,
                 issuedAt.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
         };
-        var token = new JwtSecurityToken(issuer, audience, claims,
+        var token = new JwtSecurityToken(issuer, audience,
+            claims.Concat(roles.Select(role => new Claim("role", role))),
             issuedAt.UtcDateTime, expiresAt.UtcDateTime,
             new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
         return new TokenResponse(new JwtSecurityTokenHandler().WriteToken(token), "Bearer", expiresAt);

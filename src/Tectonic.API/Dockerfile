@@ -10,8 +10,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false \
-    ConnectionStrings__Expenses="Data Source=/data/hackathon.db" \
-    ConnectionStrings__Identity="Data Source=/data/auth.db"
+    ConnectionStrings__Application="Data Source=/data/tectonic.db" \
+    Simulator__BaseUrl="http://127.0.0.1:8080"
 RUN mkdir /data && chown "$APP_UID:$APP_UID" /data
 COPY --from=publish /publish/ ./
 USER $APP_UID

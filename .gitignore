@@ -72,3 +72,6 @@ nunit-*.xml
 /src/Tectonic.API/auth.db
 /src/Tectonic.API/auth.db-wal
 /src/Tectonic.API/auth.db-shm
+/src/Tectonic.API/tectonic.db
+/src/Tectonic.API/tectonic.db-wal
+/src/Tectonic.API/tectonic.db-shm
