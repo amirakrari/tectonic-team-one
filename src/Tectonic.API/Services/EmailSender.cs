@@ -55,8 +55,8 @@ public sealed class EmailSender(IConfiguration configuration, ILogger<EmailSende
                 Timeout = 10_000,
                 UseDefaultCredentials = false
             };
-            var username = Environment.GetEnvironmentVariable("Email__Username");
-            var password = Environment.GetEnvironmentVariable("Email__Password");
+            var username = configuration["Email:Username"];
+            var password = configuration["Email:Password"];
             if (!string.IsNullOrEmpty(username))
             {
                 client.Credentials = new NetworkCredential(username, password);
@@ -76,8 +76,9 @@ public sealed class EmailSender(IConfiguration configuration, ILogger<EmailSende
         catch (Exception error) when (error is SmtpException or InvalidOperationException
             or ArgumentException or FormatException or HttpRequestException or OperationCanceledException)
         {
-            logger.LogWarning("Notification {Id} ({Kind}) delivery failed.",
-                notification.Id, notification.ConditionId);
+            logger.LogWarning("Notification {Id} ({Kind}) delivery failed: {ErrorType}, HTTP status {Status}.",
+                notification.Id, notification.ConditionId, error.GetType().Name,
+                (error as HttpRequestException)?.StatusCode);
             return false;
         }
     }

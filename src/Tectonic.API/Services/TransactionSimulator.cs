@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using ExpenseWatch.Api.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseWatch.Api.Services;
 
@@ -9,6 +11,7 @@ public sealed class TransactionSimulator(
     IConfiguration configuration,
     IHostApplicationLifetime lifetime,
     IHttpClientFactory clients,
+    IServiceScopeFactory scopes,
     ILogger<TransactionSimulator> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -21,9 +24,10 @@ public sealed class TransactionSimulator(
         try
         {
             var settings = configuration.GetSection("Simulator");
-            var password = Environment.GetEnvironmentVariable("Simulator__Password");
+            var allUsers = settings.GetValue<bool>("AllUsers");
+            var password = settings["Password"];
             var email = settings["Email"] ?? "simulator@example.test";
-            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(email) ||
+            if ((!allUsers && (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(email))) ||
                 !int.TryParse(settings["IntervalSeconds"] ?? "3", NumberStyles.Integer,
                     CultureInfo.InvariantCulture, out var intervalSeconds) ||
                 intervalSeconds <= 0 || intervalSeconds > (uint.MaxValue - 1) / 1000 ||
@@ -51,19 +55,64 @@ public sealed class TransactionSimulator(
             using var client = clients.CreateClient("Simulator");
             client.BaseAddress = baseUrl;
             var renewalLead = TimeSpan.FromSeconds(renewalSeconds);
-            var credentials = new AuthRequest(email, password);
-            var token = await AuthenticateAsync(allowSignup: true);
+            var credentials = new AuthRequest(email, password ?? "");
+            var token = allUsers ? null : await AuthenticateAsync(allowSignup: true);
+            var userTokens = new Dictionary<string, TokenResponse>();
+            var stoppedUsers = new HashSet<string>();
 
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSeconds));
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                date = null;
-                if (DateTimeOffset.UtcNow >= token.ExpiresAt - renewalLead)
+                if (allUsers)
                 {
-                    token = await AuthenticateAsync(allowSignup: false);
-                    logger.LogInformation("TokenRenewed");
+                    using var scope = scopes.CreateScope();
+                    var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+                    var tokens = scope.ServiceProvider.GetRequiredService<JwtTokenService>();
+                    foreach (var user in await users.Users.OrderBy(u => u.Id).ToArrayAsync(stoppingToken))
+                    {
+                        if (stoppedUsers.Contains(user.Id)) continue;
+                        try
+                        {
+                            if (!userTokens.TryGetValue(user.Id, out var session)
+                                || DateTimeOffset.UtcNow >= session.ExpiresAt - renewalLead)
+                            {
+                                session = tokens.Issue(user, await users.GetRolesAsync(user));
+                                userTokens[user.Id] = session;
+                            }
+                            client.DefaultRequestHeaders.Authorization =
+                                new AuthenticationHeaderValue("Bearer", session.AccessToken);
+                            await ProcessDayAsync();
+                        }
+                        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
+                        catch (Exception)
+                        {
+                            // Do not replay uncertain writes or stop unrelated accounts.
+                            stoppedUsers.Add(user.Id);
+                            logger.LogWarning(
+                                "UserSimulationStopped: user={User}, stage={Stage}, status={Status}, date={Date}",
+                                user.Id, stage, status, date);
+                        }
+                    }
                 }
+                else
+                {
+                    if (DateTimeOffset.UtcNow >= token!.ExpiresAt - renewalLead)
+                    {
+                        token = await AuthenticateAsync(allowSignup: false);
+                        logger.LogInformation("TokenRenewed");
+                    }
+                    await ProcessDayAsync();
+                }
+            }
 
+            reason = "timer-ended";
+
+            async Task ProcessDayAsync()
+            {
+                date = null;
                 stage = "get-date";
                 status = null;
                 using var clockResponse = await client.GetAsync("/api/demo/date", stoppingToken);
@@ -114,8 +163,6 @@ public sealed class TransactionSimulator(
                 RequireSuccess(advanceResponse);
                 logger.LogInformation("DayCompleted({Date},{Count})", dateKey, count);
             }
-
-            reason = "timer-ended";
 
             async Task<TokenResponse> AuthenticateAsync(bool allowSignup)
             {

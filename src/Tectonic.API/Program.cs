@@ -13,14 +13,40 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 DotNetEnv.Env.NoClobber().TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
-var encodedKey = Environment.GetEnvironmentVariable("Jwt__SigningKey");
+foreach (var (variable, setting) in new (string, string)[]
+{
+    ("DATABASE_CONNECTION_STRING", "ConnectionStrings:Application"),
+    ("AUTHENTICATION_LOCAL_JWT_ISSUER", "Jwt:Issuer"),
+    ("AUTHENTICATION_LOCAL_JWT_AUDIENCE", "Jwt:Audience"),
+    ("WEB_APP_ORIGIN", "WebAppOrigin"),
+    ("EMAIL_MAILPIT_URL", "Email:MailpitUrl"),
+    ("EMAIL_HOST", "Email:Host"),
+    ("EMAIL_PORT", "Email:Port"),
+    ("EMAIL_ENABLE_SSL", "Email:EnableSsl"),
+    ("EMAIL_FROM", "Email:From"),
+    ("EMAIL_RECIPIENT", "Email:Recipient"),
+    ("EMAIL_USERNAME", "Email:Username"),
+    ("EMAIL_PASSWORD", "Email:Password"),
+    ("SIMULATOR_ENABLED", "Simulator:Enabled"),
+    ("SIMULATOR_ALL_USERS", "Simulator:AllUsers"),
+    ("SIMULATOR_INTERVAL_SECONDS", "Simulator:IntervalSeconds"),
+    ("SIMULATOR_BASE_URL", "Simulator:BaseUrl"),
+    ("SIMULATOR_EMAIL", "Simulator:Email"),
+    ("SIMULATOR_PASSWORD", "Simulator:Password"),
+    ("SIMULATOR_RENEW_BEFORE_EXPIRY_SECONDS", "Simulator:RenewBeforeExpirySeconds")
+})
+{
+    if (Environment.GetEnvironmentVariable(variable) is { } value)
+        builder.Configuration[setting] = value;
+}
+var encodedKey = Environment.GetEnvironmentVariable("AUTHENTICATION_LOCAL_JWT_KEY");
 if (string.IsNullOrWhiteSpace(encodedKey))
-    throw new InvalidOperationException("Set Jwt__SigningKey to Base64 of at least 32 random bytes.");
+    throw new InvalidOperationException("Set AUTHENTICATION_LOCAL_JWT_KEY to Base64 of at least 32 random bytes.");
 byte[] keyBytes;
 try { keyBytes = Convert.FromBase64String(encodedKey); }
-catch (FormatException) { throw new InvalidOperationException("Jwt__SigningKey must contain valid Base64."); }
+catch (FormatException) { throw new InvalidOperationException("AUTHENTICATION_LOCAL_JWT_KEY must contain valid Base64."); }
 if (keyBytes.Length < 32)
-    throw new InvalidOperationException("Jwt__SigningKey must decode to at least 32 bytes.");
+    throw new InvalidOperationException("AUTHENTICATION_LOCAL_JWT_KEY must decode to at least 32 bytes.");
 var signingKey = new SymmetricSecurityKey(keyBytes);
 var issuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is required.");

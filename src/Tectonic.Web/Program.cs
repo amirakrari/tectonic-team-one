@@ -8,8 +8,20 @@ CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICult
 
 DotNetEnv.Env.NoClobber().TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
-var useMock = builder.Configuration.GetValue<bool?>("Api:UseMock")
-    ?? builder.Configuration.GetValue<bool>("API_USE_MOCK");
+foreach (var (variable, setting) in new (string, string)[]
+{
+    ("API_BASE_URL", "Api:BaseUrl"),
+    ("API_USE_MOCK", "Api:UseMock"),
+    ("SIMULATOR_DEMO_LOGIN_ENABLED", "SimulatorDemoLoginEnabled"),
+    ("SAMPLE_ACCOUNT_NAME", "SampleAccounts:0:Name"),
+    ("SAMPLE_ACCOUNT_EMAIL", "SampleAccounts:0:Email"),
+    ("SAMPLE_ACCOUNT_PASSWORD", "SampleAccounts:0:Password")
+})
+{
+    if (Environment.GetEnvironmentVariable(variable) is { } value)
+        builder.Configuration[setting] = value;
+}
+var useMock = builder.Configuration.GetValue<bool>("Api:UseMock");
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -30,7 +42,7 @@ if (useMock)
 }
 else
 {
-    var endpoint = builder.Configuration["Api:BaseUrl"] ?? builder.Configuration["API_BASE_URL"];
+    var endpoint = builder.Configuration["Api:BaseUrl"];
     if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var apiUrl)
         || (apiUrl.Scheme != "http" && apiUrl.Scheme != "https")
         || !apiUrl.AbsoluteUri.EndsWith('/'))
