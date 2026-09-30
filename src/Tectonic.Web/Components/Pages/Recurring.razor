@@ -1,0 +1,44 @@
+@page "/recurring"
+@inject IApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Recurring expenses</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Recurring expenses</MudText>
+
+@if (_items is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">No recurring expenses yet. Add the same expense on the same day two months in a row.</MudAlert>
+}
+else
+{
+    <MudDataGrid Items="_items" Dense="true" Hover="true">
+        <Columns>
+            <PropertyColumn Property="x => x.Company" />
+            <PropertyColumn Property="x => x.Amount" Format="€ #,##0.00" />
+            <PropertyColumn Property="x => x.DayOfMonth" Title="Day of month" />
+            <PropertyColumn Property="x => x.AddedAt" Title="Recurring since" Format="dd/MM/yyyy" />
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private List<RecurringExpense>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _items = await Api.GetRecurringExpensesAsync();
+        }
+        catch (Exception ex)
+        {
+            _items = [];
+            Snackbar.Add($"Could not load recurring expenses: {ex.Message}", Severity.Error);
+        }
+    }
+}
