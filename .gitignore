@@ -75,3 +75,6 @@ nunit-*.xml
 /src/Tectonic.API/tectonic.db
 /src/Tectonic.API/tectonic.db-wal
 /src/Tectonic.API/tectonic.db-shm
+
+# macOS
+.DS_Store

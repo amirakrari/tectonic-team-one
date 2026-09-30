@@ -1,0 +1,18 @@
+@* KBC-style toggle: blue track + white knob when on, pale track when off. *@
+<button type="button" role="switch" class="kbc-switch @(Checked ? "is-on" : "")"
+        aria-checked="@(Checked ? "true" : "false")" aria-label="@Label"
+        @onclick="ToggleAsync" @onclick:stopPropagation="true">
+    <span class="kbc-switch-knob"></span>
+</button>
+
+@code {
+    [Parameter] public bool Checked { get; set; }
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    private async Task ToggleAsync()
+    {
+        Checked = !Checked;
+        await CheckedChanged.InvokeAsync(Checked);
+    }
+}

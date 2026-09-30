@@ -1,0 +1,10 @@
+@page "/not-found"
+@layout MainLayout
+@inject Loc L
+
+<PageTitle>@L.PageTitle("notfound.title")</PageTitle>
+<SectionContent SectionName="page-title">@L["notfound.title"]</SectionContent>
+
+<h1 class="page-heading page-heading--tight">@L["notfound.title"]</h1>
+<p class="muted page-intro">@L["notfound.text"]</p>
+<MudButton Href="" Variant="Variant.Filled" Color="Color.Primary" DropShadow="false">@L["notfound.back"]</MudButton>

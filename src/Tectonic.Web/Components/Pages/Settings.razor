@@ -1,0 +1,160 @@
+@page "/"
+@page "/settings"
+@implements IDisposable
+@inject UiState Ui
+@inject Loc L
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>@L.PageTitle("page.settings")</PageTitle>
+<SectionContent SectionName="page-title">@L["page.settings"]</SectionContent>
+
+<h1 class="page-heading">@L["page.settings"]</h1>
+
+<div class="settings-grid">
+    <section class="kbc-card rules-card is-link" role="link" tabindex="0" aria-label="@L["page.rules"]"
+             @onclick="OpenRules" @onkeydown="OnRulesKey">
+        <h2 class="card-title">@L["page.rules"]</h2>
+        <p class="card-lead">@L["settings.weEmailYouWhen"]</p>
+        <ul class="card-bullets">
+            @foreach (var rule in RuleCatalog.All)
+            {
+                <li>@L.Rule(rule)</li>
+            }
+        </ul>
+        <div class="card-foot">
+            <KbcSwitch Label="@L["settings.emailNotifications"]" Checked="Ui.NotificationsEnabled" CheckedChanged="SetNotifications" />
+        </div>
+    </section>
+
+    <section class="kbc-card">
+        <h2 class="card-title">@L["settings.channels"]</h2>
+        @if (_editingChannels)
+        {
+            <MudTextField @bind-Value="_emailDraft" Label="@L["settings.email"]" InputType="InputType.Email" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <div class="field-row">
+                <span class="field-label">@L["settings.digestSwitch"]</span>
+                <KbcSwitch Label="@L["settings.digestSwitch"]" Checked="_digestDraft" CheckedChanged="v => _digestDraft = v" />
+            </div>
+            <div class="card-foot">
+                <MudButton Variant="Variant.Text" OnClick="() => _editingChannels = false">@L["common.cancel"]</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SaveChannels">@L["common.save"]</MudButton>
+            </div>
+        }
+        else
+        {
+            <p class="card-text">@L["settings.email"]<br />@Ui.Email</p>
+            <p class="card-text card-text--spaced">@L["settings.delivery"]<br />@(Ui.DailyDigest ? L["settings.deliveryDigest"] : L["settings.deliveryInstant"])</p>
+            <div class="card-foot">
+                <button type="button" class="edit-link" @onclick="EditChannels">@L["common.edit"]</button>
+            </div>
+        }
+    </section>
+
+    <section class="kbc-card is-link" role="link" tabindex="0" aria-label="@L["page.appearance"]"
+             @onclick="OpenAppearance" @onkeydown="OnAppearanceKey">
+        <h2 class="card-title">@L["page.appearance"]</h2>
+        @if (_editingAppearance)
+        {
+            <div @onclick:stopPropagation="true">
+                <MudRadioGroup T="bool" @bind-Value="_darkDraft">
+                    <MudRadio T="bool" Value="false" Color="Color.Primary">@L["settings.light"]</MudRadio>
+                    <MudRadio T="bool" Value="true" Color="Color.Primary">@L["settings.dark"]</MudRadio>
+                </MudRadioGroup>
+                <div class="card-foot">
+                    <MudButton Variant="Variant.Text" OnClick="() => _editingAppearance = false">@L["common.cancel"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" OnClick="SaveAppearance">@L["common.save"]</MudButton>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="card-text">@L["settings.theme"]<br />@(Ui.DarkMode ? L["settings.dark"] : L["settings.light"])@(Ui.ActiveTheme is { } t ? $" · {t.Name}" : "")</p>
+            <div class="card-foot">
+                <button type="button" class="edit-link" @onclick="EditAppearance" @onclick:stopPropagation="true">@L["common.edit"]</button>
+            </div>
+        }
+    </section>
+
+    <section class="kbc-card">
+        <h2 class="card-title card-title--icon"><KbcIcon Name="globe" Size="22" /> @L["settings.language"]</h2>
+        <div class="language-options" role="radiogroup" aria-label="@L["settings.language"]">
+            @foreach (var (lang, name) in Languages)
+            {
+                var selected = Ui.Language == lang;
+                <button type="button" role="radio" lang="@Loc.Code(lang)" aria-checked="@(selected ? "true" : "false")"
+                        class="tone-pill @(selected ? "is-selected" : "")" @onclick="() => Ui.SetLanguage(lang)">@name</button>
+            }
+        </div>
+        <p class="muted control-hint">@L["settings.languageHint"]</p>
+    </section>
+</div>
+
+@code {
+    // Language names are always shown in their own language.
+    private static readonly (Lang Lang, string Name)[] Languages =
+        [(Lang.En, "English"), (Lang.Fr, "Français"), (Lang.Nl, "Nederlands")];
+
+    private bool _editingChannels;
+    private string _emailDraft = "";
+    private bool _digestDraft;
+    private bool _editingAppearance;
+    private bool _darkDraft;
+
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void OpenRules() => Nav.NavigateTo("rules");
+
+    private void OnRulesKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ") OpenRules();
+    }
+
+    private void OpenAppearance()
+    {
+        if (!_editingAppearance) Nav.NavigateTo("appearance");
+    }
+
+    private void OnAppearanceKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ") OpenAppearance();
+    }
+
+    private void SetNotifications(bool enabled)
+    {
+        Ui.NotificationsEnabled = enabled;
+        Snackbar.Add(L.F(enabled ? "common.turnedOn" : "common.turnedOff", L["settings.emailNotifications"]),
+            Severity.Normal, o => o.VisibleStateDuration = 2000);
+    }
+
+    private void EditChannels()
+    {
+        _emailDraft = Ui.Email;
+        _digestDraft = Ui.DailyDigest;
+        _editingChannels = true;
+    }
+
+    private void SaveChannels()
+    {
+        Ui.Email = _emailDraft.Trim();
+        Ui.DailyDigest = _digestDraft;
+        _editingChannels = false;
+        Snackbar.Add(L["settings.channelsSaved"], Severity.Success);
+    }
+
+    private void EditAppearance()
+    {
+        _darkDraft = Ui.DarkMode;
+        _editingAppearance = true;
+    }
+
+    private void SaveAppearance()
+    {
+        Ui.SetDarkMode(_darkDraft);
+        _editingAppearance = false;
+    }
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
+}

@@ -1,0 +1,57 @@
+@page "/notifications"
+@inject IApiClient Api
+@inject Loc L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L.PageTitle("page.notifications")</PageTitle>
+
+<SectionContent SectionName="page-title">@L["page.notifications"]</SectionContent>
+
+<h1 class="page-heading page-heading--tight">@L["page.notifications"]</h1>
+<MudText Typo="Typo.body2" Class="muted mb-6">@L["notif.subtitle"]</MudText>
+
+@if (_items is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (_items.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">@L["notif.empty"]</MudAlert>
+}
+else
+{
+    <MudStack Spacing="2">
+        @foreach (var n in _items.OrderByDescending(n => n.CreatedAt))
+        {
+            <MudPaper Outlined="true" Class="pa-4 d-flex align-center gap-3 notif-row">
+                <KbcIcon Name="@RuleCatalog.For(n.Type).Icon" Size="28" />
+                <div class="flex-grow-1">
+                    <MudText>@n.Message</MudText>
+                    <MudText Typo="Typo.caption">@n.CreatedAt.ToString("dd/MM/yyyy HH:mm")</MudText>
+                </div>
+                @if (n.Delivery == NotificationDelivery.Digest)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">@L["notif.digest"]</MudChip>
+                }
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@L.Rule(RuleCatalog.For(n.Type))</MudChip>
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+@code {
+    private List<Notification>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _items = await Api.GetNotificationsAsync();
+        }
+        catch (Exception ex)
+        {
+            _items = [];
+            Snackbar.Add(L.F("notif.loadError", ex.Message), Severity.Error);
+        }
+    }
+}

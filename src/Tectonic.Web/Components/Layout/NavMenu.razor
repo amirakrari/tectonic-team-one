@@ -1,0 +1,35 @@
+@inject Loc L
+
+<a class="rail-logo" href="" aria-label="KBC Brussels – @L["page.settings"]">
+    <KbcLogo />
+</a>
+
+<PriveSwitch Language="Language" />
+
+<nav class="rail-links" aria-label="KBC Brussels">
+    <NavLink href="transactions" class="rail-link">
+        <KbcIcon Name="wallet" />
+        <span>@L["nav.payments"]</span>
+    </NavLink>
+    <a href="@L["nav.url.savings"]" class="rail-link" target="_blank" rel="noopener">
+        <KbcIcon Name="piggy-bank" />
+        <span>@L["nav.savings"]</span>
+    </a>
+    <a href="@L["nav.url.home"]" class="rail-link" target="_blank" rel="noopener">
+        <KbcIcon Name="house" />
+        <span>@L["nav.home"]</span>
+    </a>
+    <a href="@L["nav.url.family"]" class="rail-link" target="_blank" rel="noopener">
+        <KbcIcon Name="family" />
+        <span>@L["nav.family"]</span>
+    </a>
+    <a href="@L["nav.url.mobility"]" class="rail-link" target="_blank" rel="noopener">
+        <KbcIcon Name="car" />
+        <span>@L["nav.mobility"]</span>
+    </a>
+</nav>
+
+@code {
+    // Passed in so the rail re-renders when the language changes in Settings.
+    [Parameter] public Lang Language { get; set; }
+}

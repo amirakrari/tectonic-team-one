@@ -1,0 +1,23 @@
+@implements IDisposable
+@inject UiState Ui
+@inject Loc L
+@inject ISnackbar Snackbar
+
+<KbcSwitch Label="@L.Rule(Rule)" Checked="Ui.RulesEnabled[Rule.Id]" CheckedChanged="OnChanged" />
+
+@code {
+    [Parameter, EditorRequired] public RuleInfo Rule { get; set; } = default!;
+
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void OnChanged(bool enabled)
+    {
+        Ui.SetRuleEnabled(Rule.Id, enabled);
+        Snackbar.Add(L.F(enabled ? "common.turnedOn" : "common.turnedOff", L.Rule(Rule)), Severity.Normal,
+            o => o.VisibleStateDuration = 2000);
+    }
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
+}

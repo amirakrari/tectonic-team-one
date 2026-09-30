@@ -1,0 +1,103 @@
+@page "/transactions"
+@inject IApiClient Api
+@inject Loc L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L.PageTitle("page.transactions")</PageTitle>
+
+<SectionContent SectionName="page-title">@L["page.transactions"]</SectionContent>
+
+<h1 class="page-heading">@L["page.transactions"]</h1>
+
+<MudPaper Outlined="true" Class="settings-card mb-6">
+    <MudText Typo="Typo.h6" Class="card-title mb-2">@L["tx.addTitle"]</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="3">
+        <MudSelect T="TransactionType" @bind-Value="_new.Type" Label="@L["tx.type"]" Style="width: 140px"
+                   ToStringFunc="@(t => L[$"tx.{t}"])">
+            <MudSelectItem Value="TransactionType.Expense">@L["tx.Expense"]</MudSelectItem>
+            <MudSelectItem Value="TransactionType.Income">@L["tx.Income"]</MudSelectItem>
+        </MudSelect>
+        <MudTextField @bind-Value="_new.Company" Label="@L["tx.company"]" />
+        <MudNumericField @bind-Value="_new.Amount" Label="@L["tx.amountField"]" Min="0m" Format="0.00" Culture="L.Culture" />
+        <MudDatePicker @bind-Date="_date" Label="@L["tx.date"]" Culture="L.Culture" DateFormat="dd/MM/yyyy" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
+                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company))">@L["tx.add"]</MudButton>
+    </MudStack>
+</MudPaper>
+
+@if (_transactions is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid Items="_transactions" Outlined="true" Elevation="0" Dense="true" Hover="true" SortMode="SortMode.Single">
+        <Columns>
+            <PropertyColumn Property="x => x.Date" Title="@L["tx.date"]" Format="dd/MM/yyyy" />
+            <PropertyColumn Property="x => x.Type" Title="@L["tx.type"]">
+                <CellTemplate>@L[$"tx.{context.Item.Type}"]</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Company" Title="@L["tx.company"]" />
+            <PropertyColumn Property="x => x.Amount" Title="@L["tx.amount"]">
+                <CellTemplate>@L.Money(context.Item.Amount)</CellTemplate>
+            </PropertyColumn>
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private List<Transaction>? _transactions;
+    private readonly Transaction _new = new() { Type = TransactionType.Expense };
+    private DateTime? _date = DateTime.Today;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _transactions = (await Api.GetTransactionsAsync()).OrderByDescending(t => t.Date).ToList();
+        }
+        catch (Exception ex)
+        {
+            _transactions = [];
+            Snackbar.Add(L.F("tx.loadError", ex.Message), Severity.Error);
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        _saving = true;
+        try
+        {
+            // Diff notifications before/after so the demo shows which "emails" the rules fired.
+            var before = (await Api.GetNotificationsAsync()).Select(n => n.Id).ToHashSet();
+
+            await Api.AddTransactionAsync(new Transaction
+            {
+                Type = _new.Type,
+                Company = _new.Company.Trim(),
+                Amount = _new.Amount,
+                Date = _date ?? DateTime.Today,
+            });
+            Snackbar.Add(L.F("tx.added", L[$"tx.{_new.Type}"].ToLowerInvariant(), _new.Company), Severity.Success);
+
+            foreach (var n in (await Api.GetNotificationsAsync()).Where(n => !before.Contains(n.Id)))
+            {
+                Snackbar.Add(n.Delivery == NotificationDelivery.Digest ? $"📬 {L.F("tx.digest", n.Message)}" : $"📧 {L.F("tx.emailSent", n.Message)}",
+                    n.Delivery == NotificationDelivery.Digest ? Severity.Info : Severity.Warning);
+            }
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L.F("tx.addError", ex.Message), Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

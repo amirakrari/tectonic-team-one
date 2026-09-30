@@ -1,0 +1,116 @@
+@page "/appearance/email"
+@implements IDisposable
+@inject UiState Ui
+@inject Loc L
+
+<PageTitle>@L.PageTitle("page.email")</PageTitle>
+<SectionContent SectionName="page-title">@L["page.email"]</SectionContent>
+
+<h1 class="page-heading">@L["page.email"]</h1>
+
+<div class="email-layout">
+    <div class="email-controls">
+        <section class="kbc-card elevated">
+            <h2 class="section-title">@L["email.tone"]</h2>
+            <div class="tone-group tone-group--wrap" role="radiogroup" aria-label="@L["email.tone"]">
+                @foreach (var tone in EmailTemplates.Tones)
+                {
+                    var selected = Ui.EmailTone == tone;
+                    <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                            class="tone-pill @(selected ? "is-selected" : "")" @onclick="() => Ui.SetEmailTone(tone)">@L[$"etone.{tone}"]</button>
+                }
+            </div>
+            <p class="muted control-hint">@L[$"etone.{Ui.EmailTone}.desc"]</p>
+        </section>
+
+        <section class="kbc-card elevated">
+            <h2 class="section-title">@L["email.design"]</h2>
+            <div class="design-options" role="radiogroup" aria-label="@L["email.design"]">
+                @foreach (var design in EmailTemplates.Designs)
+                {
+                    var selected = Ui.EmailDesign == design;
+                    <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                            class="design-option @(selected ? "is-selected" : "")" @onclick="() => Ui.SetEmailDesign(design)">
+                        <span class="design-thumb design-thumb--@design.ToLowerInvariant()" style="@ThumbStyle(design)">
+                            <span class="design-thumb-line"></span>
+                            <span class="design-thumb-line short"></span>
+                        </span>
+                        <span class="design-label">@L[$"design.{design}"]</span>
+                    </button>
+                }
+            </div>
+            <p class="muted control-hint">@DesignDescription</p>
+        </section>
+
+        <section class="kbc-card elevated">
+            <h2 class="section-title">@L["email.textStyle"]</h2>
+            <div class="field-row">
+                <span class="field-label">@L["email.textSize"]</span>
+                <div class="segmented" role="radiogroup" aria-label="@L["email.textSize"]">
+                    @foreach (var size in EmailTemplates.TextSizes)
+                    {
+                        var selected = Ui.EmailTextSize == size;
+                        <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                                class="segmented-option @(selected ? "is-selected" : "")" @onclick="() => Ui.SetEmailTextSize(size)">@L[$"size.{size}"]</button>
+                    }
+                </div>
+            </div>
+            <div class="field-row">
+                <span class="field-label">@L["email.emoji"]</span>
+                <KbcSwitch Label="@L["email.emoji"]" Checked="Ui.EmailEmoji" CheckedChanged="Ui.SetEmailEmoji" />
+            </div>
+        </section>
+    </div>
+
+    <section class="kbc-card elevated email-preview-card" aria-label="@L["email.preview"]">
+        <div class="preview-head">
+            <h2 class="section-title">@L["email.preview"]</h2>
+            <div class="segmented segmented--small" role="radiogroup" aria-label="@L["email.preview"]">
+                @foreach (var sample in EmailTemplates.Samples)
+                {
+                    var selected = _sample == sample;
+                    <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                            class="segmented-option @(selected ? "is-selected" : "")" @onclick="() => _sample = sample">@L[$"sample.{sample}"]</button>
+                }
+            </div>
+        </div>
+
+        <div lang="@Loc.Code(Ui.Language)" class="email email--@Ui.EmailDesign.ToLowerInvariant() email--@Ui.EmailTextSize.ToLowerInvariant()"
+             style="--email-accent: @Ui.Accent; --email-header-bg: @HeaderBackground">
+            <div class="email-meta">
+                <span><strong>@L["email.from"]</strong> KBC Brussels</span>
+                <span><strong>@L["email.to"]</strong> @Ui.Email</span>
+            </div>
+            <div class="email-header"><KbcLogo /></div>
+            <div class="email-body">
+                <h3 class="email-subject">@(Ui.EmailEmoji ? EmailTemplates.Emoji(Ui.EmailTone, _sample) + " " : "")@Email.Subject</h3>
+                <p class="email-text">@Email.Body</p>
+                <span class="email-cta">@Email.Cta</span>
+                <p class="email-footer">@L.F("email.footer", L.Rule(RuleCatalog.For(_sample)))</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private NotificationType _sample = NotificationType.PriceIncrease;
+
+    private EmailSample Email => EmailTemplates.Get(Ui.Language, Ui.EmailTone, _sample);
+
+    // "Theme" design uses the gradient chosen under Appearance > Themes, or KBC navy→blue.
+    private string HeaderBackground => Ui.ActiveTheme?.Gradient ?? "linear-gradient(135deg, #0D2A50 0%, #0097DB 100%)";
+
+    private string ThumbStyle(string design) => design == "Theme" ? $"--thumb-bg: {HeaderBackground}" : "";
+
+    private string DesignDescription => Ui.EmailDesign switch
+    {
+        "Theme" => Ui.ActiveTheme is { } t ? L.F("design.Theme.desc", t.Name) : L["design.Theme.none"],
+        _ => L[$"design.{Ui.EmailDesign}.desc"],
+    };
+
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
+}

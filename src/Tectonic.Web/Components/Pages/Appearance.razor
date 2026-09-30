@@ -1,0 +1,85 @@
+@page "/appearance"
+@implements IDisposable
+@inject UiState Ui
+@inject Loc L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L.PageTitle("page.appearance")</PageTitle>
+<SectionContent SectionName="page-title">@L["page.appearance"]</SectionContent>
+
+<h1 class="page-heading">@L["appearance.title"]</h1>
+
+<div class="appearance-stack">
+    <article class="kbc-card rule-card">
+        <KbcIcon Name="palette" Size="36" Class="rule-icon" />
+        <div class="rule-text">
+            <h2 class="rule-title">@L["appearance.personalize"]</h2>
+            <p class="rule-desc">@L["appearance.personalize.desc"]</p>
+        </div>
+        <KbcSwitch Label="@L["appearance.personalize"]" Checked="Ui.Personalize" CheckedChanged="SetPersonalize" />
+    </article>
+
+    <article class="kbc-card rule-card">
+        <KbcIcon Name="moon" Size="36" Class="rule-icon" />
+        <div class="rule-text">
+            <h2 class="rule-title">@L["menu.darkMode"]</h2>
+            <p class="rule-desc">@L["appearance.dark.desc"]</p>
+        </div>
+        <KbcSwitch Label="@L["menu.darkMode"]" Checked="Ui.DarkMode" CheckedChanged="Ui.SetDarkMode" />
+    </article>
+
+    <a href="appearance/email" class="kbc-card rule-card is-link card-link">
+        <KbcIcon Name="mail" Size="36" Class="rule-icon" />
+        <div class="rule-text">
+            <h2 class="rule-title">@L["page.email"]</h2>
+            <p class="rule-desc">@L.F("appearance.email.desc", L[$"etone.{Ui.EmailTone}"], L[$"design.{Ui.EmailDesign}"])</p>
+        </div>
+        <KbcIcon Name="chevron-right" Size="22" Class="card-chevron" />
+    </a>
+
+    <section class="kbc-card elevated @(Ui.Personalize ? "" : "is-disabled")" aria-disabled="@(!Ui.Personalize)">
+        <h2 class="section-title">@L["appearance.themes"]</h2>
+        <div class="theme-strip" role="radiogroup" aria-label="@L["appearance.themes"]">
+            @foreach (var theme in AppearanceCatalog.Themes)
+            {
+                var selected = Ui.ThemeId == theme.Id;
+                <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" aria-label="@theme.Name"
+                        class="theme-swatch @(selected ? "is-selected" : "")" style="background: @theme.Gradient" title="@theme.Name"
+                        disabled="@(!Ui.Personalize)" @onclick="() => Ui.SetTheme(theme.Id)">
+                    @if (selected)
+                    {
+                        <span class="theme-check"><KbcIcon Name="check" Size="14" StrokeWidth="2.5" /></span>
+                    }
+                </button>
+            }
+        </div>
+    </section>
+
+    <section class="kbc-card elevated @(Ui.Personalize ? "" : "is-disabled")" aria-disabled="@(!Ui.Personalize)">
+        <h2 class="section-title">@L["appearance.tone"]</h2>
+        <div class="tone-group" role="radiogroup" aria-label="@L["appearance.tone"]">
+            @foreach (var tone in AppearanceCatalog.Tones)
+            {
+                var selected = Ui.Tone == tone;
+                <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                        class="tone-pill @(selected ? "is-selected" : "")"
+                        disabled="@(!Ui.Personalize)" @onclick="() => Ui.SetTone(tone)">@L[$"tone.{tone}"]</button>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void SetPersonalize(bool on)
+    {
+        Ui.SetPersonalize(on);
+        Snackbar.Add(L.F(on ? "common.turnedOn" : "common.turnedOff", L["appearance.personalization"]),
+            Severity.Normal, o => o.VisibleStateDuration = 2000);
+    }
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
+}
