@@ -1,5 +1,23 @@
 # Expense Watch - complete hackathon project briefing
 
+## Current API correction for recording
+
+Use [README.md](README.md) as the current contract. The discussion below includes
+historical shared-data architecture and is not the final implementation contract.
+The integrated API uses all nine `Models/Domain` entities in one Identity-enabled
+AppDbContext and `tectonic.db`. Transactions, recurring income/expenses, clocks,
+notifications and enabled-condition preferences belong to individual users.
+Condition/type applicability is a normalized join; only email is supported.
+
+Use the newer recording API on port 5081, with `counterpartyKey`,
+`counterpartyName`, `transactionKey` and `/api/recurring-transactions`, not the
+old port 5080 contract. Advance the presenter clock before each transaction;
+January 5 and February 5 must have identical stream keys. Use a separate presenter
+account or disable the simulator. The simulator makes sequential authenticated
+HTTP calls and advances only its dedicated user's clock. Final runtime evidence
+is recorded in `dev/active/domain-simulator/context.md`, not inferred from the
+historical claims below.
+
 > **Audience:** Team members preparing the PowerPoint, pitch, and demonstration
 > **Status:** Repository-grounded briefing; implemented features and proposals are distinguished below
 > **Owner:** Tectonic Team One
