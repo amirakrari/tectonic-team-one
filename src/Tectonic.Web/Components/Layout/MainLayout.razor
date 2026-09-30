@@ -3,7 +3,7 @@
 @inject UiState Ui
 @inject IJSRuntime JS
 @inject Loc L
-@inject AccountStore Accounts
+@inject IApiClient Api
 @inject NavigationManager Nav
 @inject ProtectedSessionStorage Session
 
@@ -126,7 +126,15 @@
 
     protected override void OnInitialized() => Ui.Changed += OnUiChanged;
 
-    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+    private void OnUiChanged() => InvokeAsync(async () =>
+    {
+        if (!Ui.SignedIn)
+        {
+            await Session.DeleteAsync(Pages.Login.SessionKey);
+            Nav.NavigateTo("login");
+        }
+        StateHasChanged();
+    });
 
     // Keep <html lang> in sync with the chosen language (screen readers, spellcheck, hyphenation).
     // On first render, restore the signed-in user from this tab's session, or send them to the login page.
@@ -148,10 +156,14 @@
     {
         try
         {
-            var stored = await Session.GetAsync<string>(Pages.Login.SessionKey);
-            var account = stored.Success && stored.Value is not null ? Accounts.Find(stored.Value) : null;
-            if (account is null) return false;
-            Ui.SignIn(account);
+            var stored = await Session.GetAsync<AuthSession>(Pages.Login.SessionKey);
+            var session = stored.Success ? stored.Value : null;
+            if (session is null || session.ExpiresAt <= DateTimeOffset.UtcNow || session.IsMock != Api.IsMock)
+            {
+                await Session.DeleteAsync(Pages.Login.SessionKey);
+                return false;
+            }
+            Ui.SignIn(session);
             return true;
         }
         catch (System.Security.Cryptography.CryptographicException)

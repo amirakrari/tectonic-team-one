@@ -1,5 +1,32 @@
 # Technical documentation: webapp
 
+## Current integration (supersedes historical proposal below)
+
+Local runs load the repository-root `.env` using DotNetEnv without overriding
+injected environment values: `API_BASE_URL=http://127.0.0.1:5000/`,
+`API_USE_MOCK=false`. The endpoint is no longer in development appsettings.
+`Api__BaseUrl`/`Api__UseMock` overrides support Compose.
+
+`IApiClient` calls `/api/auth/signup` and `/api/auth/login` with email/password,
+then attaches the returned JWT to each business request. Circuit-scoped `UiState`
+holds the session; protected session storage restores it on refresh until expiry.
+Logout and API 401 clear authentication. API ownership comes from validated JWT
+`sub`, never from a browser-supplied user ID. Mock sample accounts are not API users.
+
+Real routes: transactions GET/POST, recurring-transactions GET, notifications
+GET, demo/date GET/PUT, transaction-types/conditions/notification-channels GET,
+and me/conditions GET plus me/conditions/{id} PUT. UI DTO mapping uses
+counterpartyKey/counterpartyName/transactionKey/description/amount/currency/date;
+POST returns transaction plus notifications. Dates use YYYY-MM-DD.
+Recurring rows use lastAmount/lastPaymentDate/nextExpectedDate; notifications
+use kind/body/deliveryStatus. Rules fetches supported conditions and persists
+isEnabled/channelId (email channel 1). Only price-increased, recurring-added and
+recurring-missing are supported. Critical flags, digest, and additional mock rules
+are not backend capabilities.
+
+The older proposal and bootstrap examples below are historical references, not
+the current API contract. The backend contract in README is authoritative.
+
 This covers the webapp's architecture, its contract with the API, setup, and the patterns to copy. It follows the team's hackathon stack decisions: .NET 10, Blazor Server, MudBlazor defaults, no tests, no auth, no validation.
 
 Everything here was built and run against .NET SDK 10.0.401 and MudBlazor 9.11.0. It builds with 0 warnings, and all four pages were exercised in a browser in mock mode.

@@ -2,16 +2,28 @@
 @inject UiState Ui
 @inject Loc L
 @inject ISnackbar Snackbar
+@inject IApiClient Api
 
 <KbcSwitch Label="@L.Rule(Rule)" Checked="Ui.RulesEnabled[Rule.Id]" CheckedChanged="OnChanged" />
 
 @code {
     [Parameter, EditorRequired] public RuleInfo Rule { get; set; } = default!;
+    [Parameter] public int? ConditionId { get; set; }
 
     protected override void OnInitialized() => Ui.Changed += OnUiChanged;
 
-    private void OnChanged(bool enabled)
+    private async Task OnChanged(bool enabled)
     {
+        if (!Api.IsMock)
+        {
+            if (ConditionId is null) return;
+            try { await Api.UpdateConditionAsync(ConditionId.Value, enabled, 1); }
+            catch (HttpRequestException ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+                return;
+            }
+        }
         Ui.SetRuleEnabled(Rule.Id, enabled);
         Snackbar.Add(L.F(enabled ? "common.turnedOn" : "common.turnedOff", L.Rule(Rule)), Severity.Normal,
             o => o.VisibleStateDuration = 2000);

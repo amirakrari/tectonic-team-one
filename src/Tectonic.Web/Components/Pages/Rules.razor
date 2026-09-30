@@ -3,6 +3,7 @@
 @inject UiState Ui
 @inject Loc L
 @inject ISnackbar Snackbar
+@inject IApiClient Api
 
 <PageTitle>@L.PageTitle("page.rules")</PageTitle>
 <SectionContent SectionName="page-title">@L["page.rules"]</SectionContent>
@@ -10,6 +11,8 @@
 <h1 class="page-heading">@L["page.rules"]</h1>
 
 <div class="rule-list">
+    @if (Api.IsMock)
+    {
     <article class="kbc-card rule-card rule-card--filter">
         <KbcIcon Name="shield-alert" Size="36" Class="rule-icon rule-icon--critical" />
         <div class="rule-text">
@@ -19,22 +22,52 @@
         </div>
         <KbcSwitch Label="@L["rules.critical.title"]" Checked="Ui.CriticalOnly" CheckedChanged="SetCriticalOnly" />
     </article>
+    }
 
-    @foreach (var rule in RuleCatalog.All)
+    @foreach (var rule in RuleCatalog.All.Where(r => Api.IsMock || ConditionId(r) is not null))
     {
         <article class="kbc-card rule-card">
             <KbcIcon Name="@rule.Icon" Size="36" Class="rule-icon" />
             <div class="rule-text">
-                <h2 class="rule-title">@L.Rule(rule)</h2>
-                <p class="rule-desc">@L.RuleDesc(rule)</p>
+                <h2 class="rule-title">@(Api.IsMock ? L.Rule(rule) : _conditions.First(c => c.Id == ConditionId(rule)).Name)</h2>
+                @if (Api.IsMock) { <p class="rule-desc">@L.RuleDesc(rule)</p> }
             </div>
-            <RuleToggle Rule="rule" />
+            <RuleToggle Rule="rule" ConditionId="ConditionId(rule)" />
         </article>
     }
 </div>
 
 @code {
-    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+    private List<Condition> _conditions = [];
+    private int? ConditionId(RuleInfo rule)
+    {
+        var code = rule.Type switch
+        {
+            NotificationType.PriceIncrease => "price-increased",
+            NotificationType.RecurringAdded => "recurring-added",
+            NotificationType.RecurringRemoved => "recurring-missing",
+            _ => ""
+        };
+        return _conditions.FirstOrDefault(c => c.Code == code)?.Id;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ui.Changed += OnUiChanged;
+        if (!Api.IsMock)
+        {
+            try
+            {
+                _conditions = await Api.GetConditionsAsync();
+                foreach (var setting in await Api.GetConditionSettingsAsync())
+                {
+                    var rule = RuleCatalog.All.FirstOrDefault(r => ConditionId(r) == setting.ConditionId);
+                    if (rule is not null) Ui.SetRuleEnabled(rule.Id, setting.IsEnabled);
+                }
+            }
+            catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        }
+    }
 
     private void SetCriticalOnly(bool on)
     {

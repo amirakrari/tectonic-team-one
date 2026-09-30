@@ -9,10 +9,13 @@
 <SectionContent SectionName="page-title">@L["page.recurring"]</SectionContent>
 
 <h1 class="page-heading page-heading--tight">@L["page.recurring"]</h1>
+@if (Api.IsMock)
+{
 <p class="muted page-intro">
     @((MarkupString)L["rec.intro"])
     @L[Ui.CriticalOnly ? "rec.intro.on" : "rec.intro.off"]
 </p>
+}
 
 @if (_items is null)
 {
@@ -27,11 +30,21 @@ else
     <MudDataGrid Items="_items" Outlined="true" Elevation="0" Dense="true" Hover="true">
         <Columns>
             <PropertyColumn Property="x => x.Company" Title="@L["tx.company"]" />
+            @if (!Api.IsMock)
+            {
+                <PropertyColumn Property="x => x.Type" Title="@L["tx.type"]">
+                    <CellTemplate>@L[$"tx.{context.Item.Type}"]</CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.TransactionKey" Title="@L["tx.streamKey"]" />
+                <PropertyColumn Property="x => x.NextExpectedDate" Title="@L["rec.next"]" Format="dd/MM/yyyy" />
+            }
             <PropertyColumn Property="x => x.Amount" Title="@L["tx.amount"]">
                 <CellTemplate>@L.Money(context.Item.Amount)</CellTemplate>
             </PropertyColumn>
             <PropertyColumn Property="x => x.DayOfMonth" Title="@L["rec.day"]" />
-            <PropertyColumn Property="x => x.AddedAt" Title="@L["rec.since"]" Format="dd/MM/yyyy" />
+            <PropertyColumn Property="x => x.AddedAt" Title="@L[Api.IsMock ? "rec.since" : "rec.last"]" Format="dd/MM/yyyy" />
+            @if (Api.IsMock)
+            {
             <TemplateColumn Title="@L["rec.priority"]" Sortable="false" Filterable="false">
                 <CellTemplate>
                     <div class="priority-toggle" role="radiogroup" aria-label="@L.F("rec.priorityOf", context.Item.Company)">
@@ -44,6 +57,7 @@ else
                     </div>
                 </CellTemplate>
             </TemplateColumn>
+            }
         </Columns>
     </MudDataGrid>
 }

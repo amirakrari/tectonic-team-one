@@ -18,10 +18,23 @@
             <MudSelectItem Value="TransactionType.Income">@L["tx.Income"]</MudSelectItem>
         </MudSelect>
         <MudTextField @bind-Value="_new.Company" Label="@L["tx.company"]" />
+        @if (!Api.IsMock)
+        {
+            <MudTextField @bind-Value="_new.CounterpartyKey" Label="@L["tx.counterpartyKey"]" />
+            <MudTextField @bind-Value="_new.TransactionKey" Label="@L["tx.streamKey"]" />
+            <MudTextField @bind-Value="_new.Description" Label="@L["tx.description"]" />
+        }
         <MudNumericField @bind-Value="_new.Amount" Label="@L["tx.amountField"]" Min="0m" Format="0.00" Culture="L.Culture" />
         <MudDatePicker @bind-Date="_date" Label="@L["tx.date"]" Culture="L.Culture" DateFormat="dd/MM/yyyy" />
+        @if (!Api.IsMock)
+        {
+            <MudText Typo="Typo.body2">@L.F("tx.demoDate", _demoDate?.ToString("dd/MM/yyyy") ?? "")</MudText>
+            <MudButton OnClick="AdvanceDateAsync" Disabled="@(_saving || _demoDate is null || _date is null || DateOnly.FromDateTime(_date.Value) <= _demoDate.Value)">
+                @L["tx.advance"]
+            </MudButton>
+        }
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
-                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company))">@L["tx.add"]</MudButton>
+                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company) || (!Api.IsMock && (_demoDate is null || _date is null || DateOnly.FromDateTime(_date.Value) != _demoDate.Value || string.IsNullOrWhiteSpace(_new.CounterpartyKey) || string.IsNullOrWhiteSpace(_new.TransactionKey) || string.IsNullOrWhiteSpace(_new.Description))))">@L["tx.add"]</MudButton>
     </MudStack>
 </MudPaper>
 
@@ -50,13 +63,19 @@ else
     private readonly Transaction _new = new() { Type = TransactionType.Expense };
     private DateTime? _date = DateTime.Today;
     private bool _saving;
+    private DateOnly? _demoDate;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        if (_demoDate is not null) _date = _demoDate.Value.ToDateTime(TimeOnly.MinValue);
+    }
 
     private async Task LoadAsync()
     {
         try
         {
+            if (!Api.IsMock) _demoDate = await Api.GetDemoDateAsync();
             _transactions = (await Api.GetTransactionsAsync()).OrderByDescending(t => t.Date).ToList();
         }
         catch (Exception ex)
@@ -64,6 +83,20 @@ else
             _transactions = [];
             Snackbar.Add(L.F("tx.loadError", ex.Message), Severity.Error);
         }
+    }
+
+    private async Task AdvanceDateAsync()
+    {
+        if (_date is null) return;
+        _saving = true;
+        try
+        {
+            var result = await Api.AdvanceDemoDateAsync(DateOnly.FromDateTime(_date.Value));
+            _demoDate = result.Date;
+            await LoadAsync();
+        }
+        catch (HttpRequestException ex) { Snackbar.Add(ex.Message, Severity.Error); }
+        finally { _saving = false; }
     }
 
     private async Task AddAsync()
@@ -78,6 +111,9 @@ else
             {
                 Type = _new.Type,
                 Company = _new.Company.Trim(),
+                CounterpartyKey = _new.CounterpartyKey.Trim(),
+                TransactionKey = _new.TransactionKey.Trim(),
+                Description = _new.Description.Trim(),
                 Amount = _new.Amount,
                 Date = _date ?? DateTime.Today,
             });
@@ -85,6 +121,11 @@ else
 
             foreach (var n in (await Api.GetNotificationsAsync()).Where(n => !before.Contains(n.Id)))
             {
+                if (n.DeliveryStatus != "sent")
+                {
+                    Snackbar.Add($"{n.DeliveryStatus}: {n.Message}", Severity.Warning);
+                    continue;
+                }
                 Snackbar.Add(n.Delivery == NotificationDelivery.Digest ? $"📬 {L.F("tx.digest", n.Message)}" : $"📧 {L.F("tx.emailSent", n.Message)}",
                     n.Delivery == NotificationDelivery.Digest ? Severity.Info : Severity.Warning);
             }

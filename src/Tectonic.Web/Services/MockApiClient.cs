@@ -6,8 +6,53 @@ namespace Tectonic.Web.Services;
 // Price increase/decrease and duplicate charge are faked here and respect the UI settings
 // (rule switches, email master switch, critical-only, daily summary) so the demo behaves like the real thing.
 // Messages are rendered in the language chosen in Settings, as the API would do.
-public class MockApiClient(UiState ui, Loc loc) : IApiClient
+public class MockApiClient(UiState ui, Loc loc, AccountStore accounts) : IApiClient
 {
+    public bool IsMock => true;
+    private DateOnly _demoDate = DateOnly.FromDateTime(DateTime.Today);
+    private readonly List<ConditionSetting> _settings = [new(1, true, 1), new(2, true, 1), new(3, true, 1)];
+
+    public Task<AuthSession> LoginAsync(string email, string password)
+    {
+        var account = accounts.SignIn(email, password)
+            ?? throw new HttpRequestException("Invalid email or password.");
+        return Task.FromResult(new AuthSession(account.Name, account.Email, "", DateTimeOffset.MaxValue, true));
+    }
+
+    public Task<AuthSession> SignupAsync(string name, string email, string password)
+    {
+        var account = accounts.Register(name, email, password)
+            ?? throw new HttpRequestException("An account with this email already exists.");
+        return Task.FromResult(new AuthSession(account.Name, account.Email, "", DateTimeOffset.MaxValue, true));
+    }
+
+    public Task<DateOnly> GetDemoDateAsync() => Task.FromResult(_demoDate);
+
+    public Task<ClockAdvanceResponse> AdvanceDemoDateAsync(DateOnly date)
+    {
+        if (date < _demoDate) throw new HttpRequestException("The demo date cannot move backwards.");
+        _demoDate = date;
+        return Task.FromResult(new ClockAdvanceResponse(date, []));
+    }
+
+    public Task<List<Lookup>> GetTransactionTypesAsync() =>
+        Task.FromResult<List<Lookup>>([new(1, "expense", "Expense"), new(2, "income", "Income")]);
+    public Task<List<Condition>> GetConditionsAsync() => Task.FromResult<List<Condition>>(
+        [new(1, "price-increased", "Price increased", [1]), new(2, "recurring-added", "Recurring added", [1, 2]),
+         new(3, "recurring-missing", "Recurring missing", [1, 2])]);
+    public Task<List<NotificationChannel>> GetNotificationChannelsAsync() => Task.FromResult<List<NotificationChannel>>(
+        [new(1, "email", "Email", true), new(2, "sms", "SMS", false), new(3, "in-app", "In-app", false)]);
+    public Task<List<ConditionSetting>> GetConditionSettingsAsync() => Task.FromResult(_settings.ToList());
+    public Task<ConditionSetting> UpdateConditionAsync(int conditionId, bool enabled, int channelId)
+    {
+        if (channelId != 1) throw new HttpRequestException("Notification channel is unavailable.");
+        var index = _settings.FindIndex(s => s.ConditionId == conditionId);
+        if (index < 0) throw new HttpRequestException("Condition not found.");
+        var setting = new ConditionSetting(conditionId, enabled, channelId);
+        _settings[index] = setting;
+        return Task.FromResult(setting);
+    }
+
     private static readonly DateTime Today = DateTime.Today;
 
     private sealed record MockNotification(int Id, NotificationType Type, string Company, DateTime CreatedAt,

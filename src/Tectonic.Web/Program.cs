@@ -6,7 +6,10 @@ using Tectonic.Web.Services;
 // Same number/date format on every machine: dot decimals, dd/MM/yyyy dates.
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-GB");
 
+DotNetEnv.Env.NoClobber().TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
+var useMock = builder.Configuration.GetValue<bool?>("Api:UseMock")
+    ?? builder.Configuration.GetValue<bool>("API_USE_MOCK");
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -21,14 +24,25 @@ builder.Services.AddScoped<UiState>();
 builder.Services.AddScoped<Loc>();
 builder.Services.AddSingleton<AccountStore>();
 
-if (builder.Configuration.GetValue<bool>("Api:UseMock"))
+if (useMock)
 {
     builder.Services.AddScoped<IApiClient, MockApiClient>();
 }
 else
 {
-    builder.Services.AddHttpClient<IApiClient, ApiClient>(client =>
-        client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"]!));
+    var endpoint = builder.Configuration["Api:BaseUrl"] ?? builder.Configuration["API_BASE_URL"];
+    if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var apiUrl)
+        || (apiUrl.Scheme != "http" && apiUrl.Scheme != "https")
+        || !apiUrl.AbsoluteUri.EndsWith('/'))
+        throw new InvalidOperationException("Set API_BASE_URL in .env to an HTTP(S) API URL ending in /.");
+    builder.Services.AddHttpClient("Api", client => client.BaseAddress = apiUrl)
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = false, UseCookies = false
+        });
+    builder.Services.AddScoped<IApiClient>(services => new ApiClient(
+        services.GetRequiredService<IHttpClientFactory>().CreateClient("Api"),
+        services.GetRequiredService<UiState>()));
 }
 
 var app = builder.Build();

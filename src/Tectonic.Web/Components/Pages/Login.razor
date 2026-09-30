@@ -3,6 +3,7 @@
 @inject UiState Ui
 @inject Loc L
 @inject AccountStore Accounts
+@inject IApiClient Api
 @inject NavigationManager Nav
 @inject ProtectedSessionStorage Session
 @inject IJSRuntime JS
@@ -22,7 +23,7 @@
 
     <h1 class="visually-hidden">@L[_signup ? "auth.signup" : "auth.login"]</h1>
 
-    <form class="auth-form" @onsubmit="SubmitAsync" novalidate>
+    <form class="auth-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault novalidate>
         @if (_signup)
         {
             <label for="auth-name">@L["auth.name"]</label>
@@ -54,7 +55,7 @@
             <button type="button" class="auth-link" @onclick="ToggleMode">@L[_signup ? "auth.login" : "auth.signup"]</button>
         </p>
 
-        @if (!_signup && Accounts.Demo is not null)
+        @if (Api.IsMock && !_signup && Accounts.Demo is not null)
         {
             <button type="button" class="auth-link auth-demo" @onclick="UseDemo">@L["auth.demo"]</button>
         }
@@ -64,7 +65,7 @@
 </main>
 
 @code {
-    public const string SessionKey = "kbc-user";
+    public const string SessionKey = "tectonic-auth";
 
     private static readonly (Lang Lang, string Label)[] Languages = [(Lang.En, "EN"), (Lang.Fr, "FR"), (Lang.Nl, "NL")];
 
@@ -105,21 +106,26 @@
 
     private async Task SubmitAsync()
     {
+        if (_busy) return;
         _error = Validate();
         if (_error is not null) return;
 
         _busy = true;
-        var account = _signup ? Accounts.Register(_name, _email, _password) : Accounts.SignIn(_email, _password);
-        if (account is null)
+        try
         {
-            _error = L[_signup ? "auth.err.exists" : "auth.err.invalid"];
-            _busy = false;
-            return;
+            var session = _signup
+                ? await Api.SignupAsync(_name, _email, _password)
+                : await Api.LoginAsync(_email, _password);
+            await Session.SetAsync(SessionKey, session);
+            Ui.SignIn(session);
+            _password = _confirm = "";
+            Nav.NavigateTo(SafeReturnUrl);
         }
-
-        Ui.SignIn(account);
-        await Session.SetAsync(SessionKey, account.Email); // stay signed in across page refreshes in this tab
-        Nav.NavigateTo(SafeReturnUrl);
+        catch (HttpRequestException ex)
+        {
+            _error = ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ? L["auth.err.invalid"] : ex.Message;
+        }
+        finally { _busy = false; }
     }
 
     private string? Validate()

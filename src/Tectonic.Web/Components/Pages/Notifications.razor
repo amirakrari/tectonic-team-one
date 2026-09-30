@@ -34,6 +34,10 @@ else
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">@L["notif.digest"]</MudChip>
                 }
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@L.Rule(RuleCatalog.For(n.Type))</MudChip>
+                @if (!Api.IsMock)
+                {
+                    <MudChip T="string" Size="Size.Small">@n.DeliveryStatus</MudChip>
+                }
             </MudPaper>
         }
     </MudStack>

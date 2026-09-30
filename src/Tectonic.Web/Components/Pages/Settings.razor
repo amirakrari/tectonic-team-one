@@ -5,6 +5,7 @@
 @inject Loc L
 @inject ISnackbar Snackbar
 @inject NavigationManager Nav
+@inject IApiClient Api
 
 <PageTitle>@L.PageTitle("page.settings")</PageTitle>
 <SectionContent SectionName="page-title">@L["page.settings"]</SectionContent>
@@ -17,19 +18,22 @@
         <h2 class="card-title">@L["page.rules"]</h2>
         <p class="card-lead">@L["settings.weEmailYouWhen"]</p>
         <ul class="card-bullets">
-            @foreach (var rule in RuleCatalog.All)
+            @foreach (var rule in RuleCatalog.All.Where(r => Api.IsMock || r.Type is NotificationType.PriceIncrease or NotificationType.RecurringAdded or NotificationType.RecurringRemoved))
             {
                 <li>@L.Rule(rule)</li>
             }
         </ul>
+        @if (Api.IsMock)
+        {
         <div class="card-foot">
             <KbcSwitch Label="@L["settings.emailNotifications"]" Checked="Ui.NotificationsEnabled" CheckedChanged="SetNotifications" />
         </div>
+        }
     </section>
 
     <section class="kbc-card">
         <h2 class="card-title">@L["settings.channels"]</h2>
-        @if (_editingChannels)
+        @if (Api.IsMock && _editingChannels)
         {
             <MudTextField @bind-Value="_emailDraft" Label="@L["settings.email"]" InputType="InputType.Email" Variant="Variant.Outlined" Margin="Margin.Dense" />
             <div class="field-row">
@@ -45,9 +49,12 @@
         {
             <p class="card-text">@L["settings.email"]<br />@Ui.Email</p>
             <p class="card-text card-text--spaced">@L["settings.delivery"]<br />@(Ui.DailyDigest ? L["settings.deliveryDigest"] : L["settings.deliveryInstant"])</p>
+            @if (Api.IsMock)
+            {
             <div class="card-foot">
                 <button type="button" class="edit-link" @onclick="EditChannels">@L["common.edit"]</button>
             </div>
+            }
         }
     </section>
 

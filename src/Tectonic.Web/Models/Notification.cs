@@ -23,6 +23,7 @@ public class Notification
     public NotificationType Type { get; set; }
     public string Company { get; set; } = "";
     public string Message { get; set; } = "";
+    public string DeliveryStatus { get; set; } = "sent";
     public DateTime CreatedAt { get; set; }
 
     // Digest = held back for the daily summary email (regular alerts when "Daily summary" is on).

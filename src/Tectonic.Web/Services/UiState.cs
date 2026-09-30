@@ -1,10 +1,13 @@
+using Tectonic.Web.Models;
+
 namespace Tectonic.Web.Services;
 
 // Per-circuit UI settings shared by the layout and the Settings, Rules, Appearance and Email pages.
 // Not persisted: the API has no settings endpoint yet.
 public class UiState
 {
-    public bool SignedIn { get; private set; }
+    public AuthSession? Session { get; private set; }
+    public bool SignedIn => Session is not null && Session.ExpiresAt > DateTimeOffset.UtcNow;
     public string UserName { get; set; } = "";
     public string Email { get; set; } = "";
     public bool Prive { get; set; } = true;
@@ -41,16 +44,16 @@ public class UiState
 
     public void SetLanguage(Lang value) => Set(() => Language = value);
 
-    public void SignIn(Account account) => Set(() =>
+    public void SignIn(AuthSession session) => Set(() =>
     {
-        SignedIn = true;
-        UserName = account.Name;
-        Email = account.Email;
+        Session = session;
+        UserName = session.Name;
+        Email = session.Email;
     });
 
     public void SignOut() => Set(() =>
     {
-        SignedIn = false;
+        Session = null;
         UserName = "";
         Email = "";
     });
