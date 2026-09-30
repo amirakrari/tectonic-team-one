@@ -1,0 +1,15 @@
+@inject UiState Ui
+@inject Loc L
+
+<button type="button" class="prive" role="switch" aria-checked="@(Ui.Prive ? "true" : "false")"
+        aria-label="@L["nav.switchAria"]" @onclick="() => Ui.Prive = !Ui.Prive">
+    <span class="prive-track">
+        <span class="prive-dot @(Ui.Prive ? "is-on" : "")"><KbcIcon Name="user" Size="12" StrokeWidth="2" /></span>
+        <span class="prive-dot @(Ui.Prive ? "" : "is-on")"><KbcIcon Name="briefcase" Size="12" StrokeWidth="2" /></span>
+    </span>
+    <span class="prive-label">@(Ui.Prive ? L["nav.personal"] : L["nav.business"])</span>
+</button>
+
+@code {
+    [Parameter] public Lang Language { get; set; }
+}

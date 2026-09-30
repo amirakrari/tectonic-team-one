@@ -1,30 +1,51 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject UiState Ui
+@inject IJSRuntime JS
+@inject Loc L
 
-<MudThemeProvider Theme="_theme" IsDarkMode="_darkMode" />
+<MudThemeProvider Theme="Theme" IsDarkMode="Ui.DarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       OnClick="() => _drawerOpen = !_drawerOpen" />
-        <MudText Typo="Typo.h6">Tectonic</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@(_darkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="() => _darkMode = !_darkMode" />
-    </MudAppBar>
+<div class="@ShellClass" style="--kbc-accent: @Ui.Accent; --kbc-page-bg: @(Ui.ActiveTheme?.Gradient ?? "none")">
+    <aside class="rail">
+        <NavMenu Language="Ui.Language" />
+    </aside>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
-    </MudDrawer>
+    <div class="main">
+        <header class="topbar">
+            <button type="button" class="back-btn" aria-label="@L["common.back"]" @onclick="GoBackAsync">
+                <KbcIcon Name="arrow-left" Size="18" />
+            </button>
+            <span class="topbar-title"><SectionOutlet SectionName="page-title" /></span>
+            <span class="topbar-spacer"></span>
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    <button type="button" class="user-chip" aria-label="@L["common.accountMenu"]" @onclick="context.ToggleAsync">
+                        <span class="avatar" aria-hidden="true"></span>
+                        <span class="user-name">@Ui.UserName</span>
+                        <KbcIcon Name="chevron-down" Size="18" />
+                    </button>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Href="settings">@L["page.settings"]</MudMenuItem>
+                    <MudMenuItem Href="rules">@L["page.rules"]</MudMenuItem>
+                    <MudMenuItem Href="appearance">@L["page.appearance"]</MudMenuItem>
+                    <MudMenuItem OnClick="() => Ui.SetDarkMode(!Ui.DarkMode)">@(Ui.DarkMode ? L["menu.lightMode"] : L["menu.darkMode"])</MudMenuItem>
+                    <MudMenuItem Href="transactions">@L["page.transactions"]</MudMenuItem>
+                    <MudMenuItem Href="recurring">@L["page.recurring"]</MudMenuItem>
+                    <MudMenuItem Href="notifications">@L["page.notifications"]</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        </header>
 
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+        <main class="content">
             @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+        </main>
+    </div>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -33,12 +54,79 @@
 </div>
 
 @code {
-    private bool _drawerOpen = true;
-    private bool _darkMode;
+    // Official KBC Brussels colors (taken from the kbcbrussels.be logo): blue #0097DB, navy #0D2A50.
+    // Primary follows the accent from Appearance > Themes (KBC blue when not personalized).
+    private MudTheme _theme = BuildTheme(AppearanceCatalog.DefaultAccent);
+    private string _themeAccent = AppearanceCatalog.DefaultAccent;
 
-    private readonly MudTheme _theme = new()
+    private MudTheme Theme
     {
-        PaletteLight = new PaletteLight { Primary = "#1E88E5", AppbarBackground = "#1E88E5" },
-        PaletteDark  = new PaletteDark  { Primary = "#90CAF9" }
+        get
+        {
+            if (_themeAccent != Ui.Accent)
+            {
+                _themeAccent = Ui.Accent;
+                _theme = BuildTheme(Ui.Accent);
+            }
+            return _theme;
+        }
+    }
+
+    private static MudTheme BuildTheme(string accent) => new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = accent,
+            Secondary = "#0D2A50",
+            AppbarBackground = "#FFFFFF",
+            Background = "#FFFFFF",
+            Surface = "#FFFFFF",
+            TextPrimary = "#1A1A1A",
+            TextSecondary = "#5C6B7A",
+            LinesDefault = "#E4E8EE",
+        },
+        // Neutral dark greys (not navy) with light text, so everything stays readable.
+        PaletteDark = new PaletteDark
+        {
+            Primary = accent,
+            Secondary = "#E6E6E6",
+            AppbarBackground = "#1C1C1E",
+            Background = "#1C1C1E",
+            Surface = "#2A2A2D",
+            DrawerBackground = "#1C1C1E",
+            TextPrimary = "#F2F2F2",
+            TextSecondary = "#B4B4BA",
+            ActionDefault = "#D0D0D5",
+            LinesDefault = "#3A3A3E",
+            TableLines = "#3A3A3E",
+            Divider = "#3A3A3E",
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography { FontFamily = ["Poppins", "Helvetica", "Arial", "sans-serif"] },
+            Button = new ButtonTypography { TextTransform = "none", FontWeight = "600" },
+        },
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px" },
     };
+
+    private string ShellClass =>
+        "shell" + (Ui.DarkMode ? " shell--dark" : "") + (Ui.ActiveTheme is not null ? " shell--themed" : "");
+
+    private async Task GoBackAsync() => await JS.InvokeVoidAsync("history.back");
+
+    private Lang _htmlLang = Lang.En;
+
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    // Keep <html lang> in sync with the chosen language (screen readers, spellcheck, hyphenation).
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_htmlLang == Ui.Language && !firstRender) return;
+        _htmlLang = Ui.Language;
+        await JS.InvokeVoidAsync("kbcSetLang", Loc.Code(Ui.Language));
+    }
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
 }

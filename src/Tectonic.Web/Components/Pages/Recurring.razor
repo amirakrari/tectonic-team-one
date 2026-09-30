@@ -1,10 +1,18 @@
 @page "/recurring"
 @inject IApiClient Api
+@inject UiState Ui
+@inject Loc L
 @inject ISnackbar Snackbar
 
-<PageTitle>Recurring expenses</PageTitle>
+<PageTitle>@L.PageTitle("page.recurring")</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Recurring expenses</MudText>
+<SectionContent SectionName="page-title">@L["page.recurring"]</SectionContent>
+
+<h1 class="page-heading page-heading--tight">@L["page.recurring"]</h1>
+<p class="muted page-intro">
+    @((MarkupString)L["rec.intro"])
+    @L[Ui.CriticalOnly ? "rec.intro.on" : "rec.intro.off"]
+</p>
 
 @if (_items is null)
 {
@@ -12,16 +20,30 @@
 }
 else if (_items.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">No recurring expenses yet. Add the same expense on the same day two months in a row.</MudAlert>
+    <MudAlert Severity="Severity.Info">@L["rec.empty"]</MudAlert>
 }
 else
 {
-    <MudDataGrid Items="_items" Dense="true" Hover="true">
+    <MudDataGrid Items="_items" Outlined="true" Elevation="0" Dense="true" Hover="true">
         <Columns>
-            <PropertyColumn Property="x => x.Company" />
-            <PropertyColumn Property="x => x.Amount" Format="€ #,##0.00" />
-            <PropertyColumn Property="x => x.DayOfMonth" Title="Day of month" />
-            <PropertyColumn Property="x => x.AddedAt" Title="Recurring since" Format="dd/MM/yyyy" />
+            <PropertyColumn Property="x => x.Company" Title="@L["tx.company"]" />
+            <PropertyColumn Property="x => x.Amount" Title="@L["tx.amount"]">
+                <CellTemplate>@L.Money(context.Item.Amount)</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.DayOfMonth" Title="@L["rec.day"]" />
+            <PropertyColumn Property="x => x.AddedAt" Title="@L["rec.since"]" Format="dd/MM/yyyy" />
+            <TemplateColumn Title="@L["rec.priority"]" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <div class="priority-toggle" role="radiogroup" aria-label="@L.F("rec.priorityOf", context.Item.Company)">
+                        <button type="button" role="radio" aria-checked="@(context.Item.IsCritical ? "true" : "false")"
+                                class="priority-option @(context.Item.IsCritical ? "is-critical" : "")"
+                                @onclick="() => SetCriticalAsync(context.Item, true)">@L["rec.critical"]</button>
+                        <button type="button" role="radio" aria-checked="@(context.Item.IsCritical ? "false" : "true")"
+                                class="priority-option @(context.Item.IsCritical ? "" : "is-regular")"
+                                @onclick="() => SetCriticalAsync(context.Item, false)">@L["rec.regular"]</button>
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
     </MudDataGrid>
 }
@@ -38,7 +60,22 @@ else
         catch (Exception ex)
         {
             _items = [];
-            Snackbar.Add($"Could not load recurring expenses: {ex.Message}", Severity.Error);
+            Snackbar.Add(L.F("rec.loadError", ex.Message), Severity.Error);
+        }
+    }
+
+    private async Task SetCriticalAsync(RecurringExpense item, bool critical)
+    {
+        if (item.IsCritical == critical) return;
+        try
+        {
+            await Api.SetCriticalAsync(item.Id, critical);
+            item.IsCritical = critical;
+            Snackbar.Add(L.F("rec.marked", item.Company, L[critical ? "rec.critical" : "rec.regular"].ToLowerInvariant()), Severity.Normal, o => o.VisibleStateDuration = 2000);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L.F("rec.updateError", item.Company, ex.Message), Severity.Error);
         }
     }
 }

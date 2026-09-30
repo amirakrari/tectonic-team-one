@@ -1,11 +1,14 @@
 @page "/notifications"
 @inject IApiClient Api
+@inject Loc L
 @inject ISnackbar Snackbar
 
-<PageTitle>Notifications</PageTitle>
+<PageTitle>@L.PageTitle("page.notifications")</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Notifications</MudText>
-<MudText Typo="Typo.body2" Class="mb-4">Every email the rules have sent.</MudText>
+<SectionContent SectionName="page-title">@L["page.notifications"]</SectionContent>
+
+<h1 class="page-heading page-heading--tight">@L["page.notifications"]</h1>
+<MudText Typo="Typo.body2" Class="muted mb-6">@L["notif.subtitle"]</MudText>
 
 @if (_items is null)
 {
@@ -13,20 +16,24 @@
 }
 else if (_items.Count == 0)
 {
-    <MudAlert Severity="Severity.Info">No notifications sent yet.</MudAlert>
+    <MudAlert Severity="Severity.Info">@L["notif.empty"]</MudAlert>
 }
 else
 {
     <MudStack Spacing="2">
         @foreach (var n in _items.OrderByDescending(n => n.CreatedAt))
         {
-            <MudPaper Class="pa-3 d-flex align-center gap-3">
-                <MudIcon Icon="@IconOf(n.Type)" Color="@ColorOf(n.Type)" />
+            <MudPaper Outlined="true" Class="pa-4 d-flex align-center gap-3">
+                <KbcIcon Name="@RuleCatalog.For(n.Type).Icon" Size="28" />
                 <div class="flex-grow-1">
                     <MudText>@n.Message</MudText>
                     <MudText Typo="Typo.caption">@n.CreatedAt.ToString("dd/MM/yyyy HH:mm")</MudText>
                 </div>
-                <MudChip T="string" Size="Size.Small" Color="@ColorOf(n.Type)">@LabelOf(n.Type)</MudChip>
+                @if (n.Delivery == NotificationDelivery.Digest)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">@L["notif.digest"]</MudChip>
+                }
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@L.Rule(RuleCatalog.For(n.Type))</MudChip>
             </MudPaper>
         }
     </MudStack>
@@ -44,28 +51,7 @@ else
         catch (Exception ex)
         {
             _items = [];
-            Snackbar.Add($"Could not load notifications: {ex.Message}", Severity.Error);
+            Snackbar.Add(L.F("notif.loadError", ex.Message), Severity.Error);
         }
     }
-
-    private static string IconOf(NotificationType type) => type switch
-    {
-        NotificationType.PriceIncrease => Icons.Material.Filled.TrendingUp,
-        NotificationType.RecurringAdded => Icons.Material.Filled.EventRepeat,
-        _ => Icons.Material.Filled.EventBusy,
-    };
-
-    private static Color ColorOf(NotificationType type) => type switch
-    {
-        NotificationType.PriceIncrease => Color.Error,
-        NotificationType.RecurringAdded => Color.Success,
-        _ => Color.Default,
-    };
-
-    private static string LabelOf(NotificationType type) => type switch
-    {
-        NotificationType.PriceIncrease => "Price increase",
-        NotificationType.RecurringAdded => "New recurring",
-        _ => "Recurring stopped",
-    };
 }

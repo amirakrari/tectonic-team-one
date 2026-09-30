@@ -13,6 +13,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddMudServices();
+builder.Services.AddScoped<UiState>();
+builder.Services.AddScoped<Loc>();
 
 if (builder.Configuration.GetValue<bool>("Api:UseMock"))
 {

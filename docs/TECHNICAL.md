@@ -42,6 +42,8 @@ This is **the webapp's proposal. Agree on it with the API team before coding.** 
 | `GET` | `/api/transactions` | – | `Transaction[]` |
 | `POST` | `/api/transactions` | `Transaction` (no `id`) | `201` + created `Transaction`. **The rules run synchronously during this call.** |
 | `GET` | `/api/recurring-expenses` | – | `RecurringExpense[]` (current list only) |
+| `PATCH` | `/api/recurring-expenses/{id}` | `{ "isCritical": true }` | `204`. Marks an expense critical or regular. |
+| `GET`/`PUT` | `/api/settings` *(proposed, not called yet)* | `Settings` (below) | The user's settings, so the rules and emails respect them |
 | `GET` | `/api/notifications` | – | `Notification[]` (every email sent) |
 
 Because the rules run inside the `POST`, any notifications they create exist by the time the call returns. The UI relies on this to show "email sent" pop-ups right away (see section 5.2).
@@ -62,20 +64,35 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 // type: "Expense" | "Income"; amount is always positive
 
 // RecurringExpense
-{ "id": 1, "company": "Netflix", "amount": 13.99, "dayOfMonth": 30, "addedAt": "2026-08-30T00:00:00" }
+{ "id": 1, "company": "Netflix", "amount": 13.99, "dayOfMonth": 30, "addedAt": "2026-08-30T00:00:00", "isCritical": false }
 
 // Notification
 { "id": 4, "type": "PriceIncrease", "company": "Netflix",
   "message": "Your expense at Netflix went up from €13.99 to €15.99.", "createdAt": "2026-09-30T20:01:00" }
-// type: "PriceIncrease" | "RecurringAdded" | "RecurringRemoved"
+// type: "PriceIncrease" | "PriceDecrease" | "RecurringAdded" | "RecurringRemoved" | "PaymentIncomplete"
+//       | "DuplicateCharge" | "UpcomingPayment"
+// delivery: "Instant" | "Digest" (held for the 18:00 daily summary)
+
+// Settings (proposed): what the UI holds today in UiState, per browser session
+{ "email": "john.doe@example.com", "language": "en", "notificationsEnabled": true, "criticalOnly": false, "dailyDigest": false,
+  "rules": { "price-increase": true, "price-decrease": true, "recurring-added": true,
+             "recurring-removed": true, "payment-incomplete": true, "duplicate-charge": true, "upcoming-payment": true },
+  "emailStyle": { "tone": "Formal", "design": "Classic", "textSize": "Regular", "emoji": false } }
+// tone: "Playful" | "Informal" | "Formal" | "Serious" | "Panicky"; design: "Classic" | "Minimal" | "Theme"
 ```
+
+Example email wording for each tone is in `Services/EmailTemplates.cs`. The API team can reuse it.
 
 The `message` text is written by the API, and the UI shows it as is. That way the email and the UI always say the same thing.
 
 ### Open questions for the API team
 
 - **"Recurring expense stopped" timing.** Nothing ticks through time in a demo, because scheduling was dropped in the stack doc. A simple option: when any transaction is posted, treat its `date` as "today" and remove any recurring expense whose next expected date has already passed. The UI doesn't need to change for this.
-- **Email recipient.** Is it hard-coded in the API's `appsettings.json` for the demo? If a settings page is wanted, we'll add `GET/PUT /api/settings`.
+- **Email recipient and settings.** The UI now collects the email address, rule switches, critical-only and email style. Until `/api/settings` exists, these live in the browser session only. The mock client already honors them, so the demo behaves correctly.
+- **Incomplete payment data.** The API needs to know a bill's total and due date to spot a missing part. Proposal: optional `billTotal` and `dueDate` on `Transaction` (the first part of a split payment carries them). The API sums payments to that company since the first part, and reminds before `dueDate` if the sum is below `billTotal`. When agreed, the UI adds these two optional fields to the Add transaction form.
+- **Critical-only filtering.** The API should skip emails for expenses whose company isn't marked `isCritical` when `criticalOnly` is on. *Possible double charge* and *Upcoming critical payment* are exempt, and so is the daily summary: they are always sent instantly.
+- **Language.** The API writes `message` and the emails in the user's `language` (`en`/`fr`/`nl`). Wording for all three languages is in `Services/Texts.cs` (`msg.*`) and `Services/EmailTemplates.cs`.
+- **Upcoming critical payment timing.** Like "recurring stopped", this needs a notion of "today". The same approach works: check on every posted transaction, or on app start.
 - **Port.** Everything is HTTPS-only. The webapp runs on `https://localhost:7130` and assumes the API is on `https://localhost:7080/`. The API team should set `applicationUrl` in their `launchSettings.json` to `https://localhost:7080`, or we change `Api:BaseUrl` to match whatever they pick. **Don't use port 5000 on a Mac:** the AirPlay Receiver already listens there and answers `403 Forbidden`.
 
 ---
@@ -155,6 +172,8 @@ Add:
    ```
 
 ### 3.4 `Components/Layout/MainLayout.razor`
+
+> **Since replaced** by the KBC Brussels shell, built from the design mockups. It has a plain HTML/CSS layout (not `MudLayout`), an 88px left rail (logo, Privé switch, Paiements, Épargne & Placements, Logement, Famille, Mobilité), and a top bar with a back arrow, the page title (via `<SectionOutlet SectionName="page-title" />`) and a user menu. See the file in the repo. The version below is only the minimal starting point.
 
 Replace the whole file. MudBlazor's providers **must** sit inside the interactive tree, which is why they're in the layout. Keep the `blazor-error-ui` div: `MainLayout.razor.css` keeps it hidden until something crashes.
 
@@ -428,10 +447,29 @@ Mock data lives per circuit (it's a `Scoped` service), so refreshing the browser
 
 | Page | File | Shows |
 |---|---|---|
-| Home | `Pages/Home.razor` | The three rules as `MudCard`s in a `MudGrid`, plus a button to Transactions |
 | Transactions | `Pages/Transactions.razor` | Add form (`MudSelect` for type, `MudTextField`, `MudNumericField`, `MudDatePicker`) above a `MudDataGrid`, newest first |
 | Recurring expenses | `Pages/Recurring.razor` | `MudDataGrid`: company, amount, day of month, since. `MudAlert` when empty |
 | Notifications | `Pages/Notifications.razor` | A `MudPaper` row per email: icon, message, date, and a `MudChip` for the rule type |
+| Rules | `Pages/Rules.razor` | One shadowed card per rule from `RuleCatalog`: `KbcIcon`, title, description, `RuleToggle` |
+| Settings | `Pages/Settings.razor` | Rules card (one `MudSwitch` per rule), Notification channels and Appearance cards with inline Edit, then Save/Cancel. The state lives in `UiState` (scoped per circuit) and isn't persisted. |
+
+**Page conventions from the design pass:**
+
+- Each page sets its top-bar title with `<SectionContent SectionName="page-title">…</SectionContent>`.
+- The page heading is `<MudText Typo="Typo.h5" Class="page-heading">`.
+- Surfaces are `Outlined="true"` with no elevation (cards, grids, papers).
+- **Match the mockups.** Structure, colors and style follow the provided KBC designs. Only fix spacing or content, and don't restyle.
+- **Icons:** use `<KbcIcon Name="…" />`, thin 1.5px line icons on a 24px grid, with paths adapted from Lucide (ISC). Add new icons to the dictionary in `Components/Shared/KbcIcon.razor`. Don't mix in Material icons.
+- **Switches:** use `<KbcSwitch>` (blue track, white knob), not `MudSwitch`.
+- **Brand:** the logo is the official `wwwroot/img/kbc-brussels-logo.svg` from kbcbrussels.be. The colors are taken from it: KBC blue `#0097DB` (links, switches, active nav, primary buttons) and KBC navy `#0D2A50` (nav labels). Shell colors are CSS variables in `app.css` (`--kbc-*`), with a dark-mode override on `.shell--dark`.
+- **Themes and accent:** `AppearanceCatalog.Themes` defines each theme's gradient (from uiGradients, MIT) and accent color. With a theme active, `.shell--themed` paints the gradient behind the whole app (`--kbc-page-bg`). The rail, top bar and `.kbc-card`s become frosted panels, and page headings on the gradient turn white. Every gradient starts dark at the top-left so those headings stay readable. The layout sets `--kbc-accent` on `.shell` and rebuilds the MudBlazor theme with the same `Primary`. Use `var(--kbc-accent)` for fills and `var(--kbc-accent-text)` for accent-colored text (it lightens the accent in dark mode so it stays readable). Never hard-code KBC blue in components.
+- **Dark mode:** toggled from Appearance (Dark mode card), the Settings Appearance card (Edit), or the user menu. It uses neutral greys (`#1C1C1E` background, `#2A2A2D` cards) with light text. The logo is inlined as `<KbcLogo />`, so its navy wordmark switches to white through `--kbc-logo-text`. The blue mark keeps its brand color.
+- **Tone of speech** is stored in `UiState.Tone` only. Sending it to the API (so emails use that tone) needs a settings endpoint.
+- **Rail links:** Paiements opens our Transactions page. The other sections open the matching kbcbrussels.be pages in a new tab.
+- **Rule switches** use `<RuleToggle Rule="…" />`. It updates `UiState` (so every page stays in sync) and confirms with a short pop-up.
+- **Custom `MudMenu` activators** must call `context.ToggleAsync`, otherwise the menu never opens (MudBlazor 9).
+- Colors come from MudBlazor CSS variables (`var(--mud-palette-…)`), so dark mode works automatically.
+- Shared classes live in `wwwroot/app.css`: `settings-card`, `card-title`, `card-actions`, `muted`.
 
 ### 5.1 Page pattern
 

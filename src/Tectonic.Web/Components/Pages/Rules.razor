@@ -1,0 +1,48 @@
+@page "/rules"
+@implements IDisposable
+@inject UiState Ui
+@inject Loc L
+@inject ISnackbar Snackbar
+
+<PageTitle>@L.PageTitle("page.rules")</PageTitle>
+<SectionContent SectionName="page-title">@L["page.rules"]</SectionContent>
+
+<h1 class="page-heading">@L["page.rules"]</h1>
+
+<div class="rule-list">
+    <article class="kbc-card rule-card rule-card--filter">
+        <KbcIcon Name="shield-alert" Size="36" Class="rule-icon rule-icon--critical" />
+        <div class="rule-text">
+            <h2 class="rule-title">@L["rules.critical.title"]</h2>
+            <p class="rule-desc">@L["rules.critical.desc"]</p>
+            <a href="recurring" class="inline-link">@L["rules.critical.link"]</a>
+        </div>
+        <KbcSwitch Label="@L["rules.critical.title"]" Checked="Ui.CriticalOnly" CheckedChanged="SetCriticalOnly" />
+    </article>
+
+    @foreach (var rule in RuleCatalog.All)
+    {
+        <article class="kbc-card rule-card">
+            <KbcIcon Name="@rule.Icon" Size="36" Class="rule-icon" />
+            <div class="rule-text">
+                <h2 class="rule-title">@L.Rule(rule)</h2>
+                <p class="rule-desc">@L.RuleDesc(rule)</p>
+            </div>
+            <RuleToggle Rule="rule" />
+        </article>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Ui.Changed += OnUiChanged;
+
+    private void SetCriticalOnly(bool on)
+    {
+        Ui.SetCriticalOnly(on);
+        Snackbar.Add(L[on ? "rules.critical.on" : "rules.critical.off"], Severity.Normal, o => o.VisibleStateDuration = 2500);
+    }
+
+    private void OnUiChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ui.Changed -= OnUiChanged;
+}

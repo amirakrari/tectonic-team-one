@@ -36,3 +36,1036 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* =========================================================
+   KBC Brussels look (matches the provided mockups)
+   Brand: blue #0097DB, navy #0D2A50 (from the official logo)
+   ========================================================= */
+
+:root {
+    --kbc-blue: #0097DB;
+    --kbc-accent: var(--kbc-blue); /* overridden by Appearance > Themes */
+    --kbc-navy: #0D2A50;
+    --kbc-logo-text: #0D2A50;
+    --kbc-text: #1A1A1A;
+    --kbc-muted: #5C6B7A;
+    --kbc-border: #E4E8EE;
+    --kbc-surface: #FFFFFF;
+    --kbc-bg: #FFFFFF;
+    --kbc-icon: #3E5470;
+    --kbc-shadow: 0 2px 8px rgba(13, 42, 80, 0.08);
+    --kbc-track-off: #E6ECF2;
+}
+
+/* Declared on .shell (where the theme accent is set inline) so it resolves to the chosen accent. */
+.shell {
+    --kbc-accent-text: var(--kbc-accent);
+}
+
+/* Dark mode: neutral dark greys (not navy) and light text/icons/logo so nothing blends in. */
+.shell--dark {
+    --kbc-text: #F2F2F2;
+    --kbc-muted: #B4B4BA;
+    --kbc-border: #3A3A3E;
+    --kbc-surface: #2A2A2D;
+    --kbc-bg: #1C1C1E;
+    --kbc-icon: #D6D6DB;
+    --kbc-navy: #E6E6EA;
+    --kbc-logo-text: #FFFFFF;
+    --kbc-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    --kbc-track-off: #4A4A4F;
+    --kbc-pill: #3A3A3E;
+    --kbc-accent-text: color-mix(in srgb, var(--kbc-accent) 50%, #FFFFFF);
+}
+
+html:has(.shell--dark),
+html:has(.shell--dark) body {
+    background: #1C1C1E;
+}
+
+body {
+    font-family: Poppins, Helvetica, Arial, sans-serif;
+}
+
+/* ---------- Shell ---------- */
+
+.shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--kbc-bg);
+    color: var(--kbc-text);
+}
+
+.rail {
+    position: sticky;
+    top: 0;
+    flex: 0 0 88px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0 16px;
+    border-right: 1px solid var(--kbc-border);
+    background: var(--kbc-surface);
+    overflow-y: auto;
+}
+
+.main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 56px;
+    margin: 0 32px;
+    border-bottom: 1px solid var(--kbc-border);
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-left: -8px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--kbc-muted);
+    cursor: pointer;
+}
+
+.back-btn:hover {
+    color: var(--kbc-navy);
+    background: var(--kbc-border);
+}
+
+.topbar-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--kbc-text);
+}
+
+.topbar-spacer {
+    flex: 1;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px 4px 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--kbc-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.user-chip:hover {
+    background: var(--kbc-border);
+}
+
+.avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #8A8F96;
+}
+
+.user-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.content {
+    width: 100%;
+    max-width: 1120px;
+    padding: 32px 64px 64px;
+}
+
+.page-heading {
+    margin: 0 0 20px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--kbc-text);
+}
+
+.page-heading--tight {
+    margin-bottom: 4px;
+}
+
+/* ---------- Left rail ---------- */
+
+.rail-logo {
+    display: block;
+    width: 52px;
+    margin-bottom: 10px;
+}
+
+.kbc-logo {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.prive {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+
+.prive-track {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--kbc-border);
+    border-radius: 999px;
+    background: var(--kbc-surface);
+}
+
+.prive-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: #A7B3C0;
+}
+
+.prive-dot.is-on {
+    background: var(--kbc-accent);
+    color: #FFFFFF;
+}
+
+.prive-label {
+    font-size: 0.625rem;
+    color: var(--kbc-navy);
+}
+
+.rail-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 0 6px;
+}
+
+.rail-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 2px;
+    border-radius: 8px;
+    color: var(--kbc-icon);
+    text-decoration: none;
+}
+
+.rail-link span {
+    font-size: 0.625rem;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--kbc-navy);
+}
+
+.rail-link:hover {
+    background: color-mix(in srgb, var(--kbc-accent) 8%, transparent);
+}
+
+.rail-link.active,
+.rail-link.active span {
+    color: var(--kbc-accent-text);
+    font-weight: 600;
+}
+
+/* ---------- Cards ---------- */
+
+.kbc-card {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+    border: 1px solid var(--kbc-border);
+    border-radius: 8px;
+    background: var(--kbc-surface);
+}
+
+.kbc-card.is-link {
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.kbc-card.is-link:hover,
+.kbc-card.is-link:focus-visible {
+    border-color: var(--kbc-accent);
+    box-shadow: var(--kbc-shadow);
+    outline: none;
+}
+
+.card-title {
+    margin: 0 0 16px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--kbc-text);
+}
+
+.card-lead,
+.card-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--kbc-text);
+}
+
+.card-bullets {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--kbc-text);
+}
+
+.card-foot {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.edit-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--kbc-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.edit-link:hover {
+    color: var(--kbc-navy);
+}
+
+.muted {
+    color: var(--kbc-muted);
+}
+
+/* ---------- Settings ---------- */
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+}
+
+.rules-card {
+    grid-row: span 2;
+}
+
+/* ---------- Rules ---------- */
+
+.rule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rule-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px 14px 16px;
+    box-shadow: var(--kbc-shadow);
+}
+
+.rule-icon {
+    flex-shrink: 0;
+    color: var(--kbc-text);
+}
+
+.rule-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.rule-title {
+    margin: 0 0 2px;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--kbc-text);
+}
+
+.rule-desc {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--kbc-text);
+}
+
+/* ---------- Appearance ---------- */
+
+.appearance-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.kbc-card.elevated {
+    box-shadow: var(--kbc-shadow);
+}
+
+.kbc-card.is-disabled .theme-strip,
+.kbc-card.is-disabled .tone-group {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.section-title {
+    margin: 0 0 14px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--kbc-text);
+}
+
+.theme-strip {
+    display: flex;
+    gap: 10px;
+    padding: 4px;
+    margin: -4px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* still scrolls by swipe, trackpad or shift+wheel, like the mockup */
+}
+
+.theme-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.theme-swatch {
+    position: relative;
+    flex: 0 0 132px;
+    height: 92px;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    scroll-snap-align: start;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 120ms ease, transform 120ms ease;
+}
+
+.theme-swatch:hover {
+    transform: translateY(-1px);
+}
+
+.theme-swatch.is-selected {
+    outline-color: var(--kbc-accent);
+}
+
+.theme-swatch:focus-visible {
+    outline-color: var(--kbc-accent);
+}
+
+.theme-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    color: var(--kbc-accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.tone-group {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.tone-pill {
+    height: 34px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--kbc-pill, #E2ECF6);
+    color: var(--kbc-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.tone-pill:hover {
+    background: color-mix(in srgb, var(--kbc-accent) 18%, var(--kbc-pill, #E2ECF6));
+}
+
+.tone-pill.is-selected {
+    background: var(--kbc-accent);
+    color: #FFFFFF;
+}
+
+.tone-pill:focus-visible {
+    outline: 2px solid var(--kbc-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Themed mode: the chosen gradient is the background of the whole app ---------- */
+
+.shell--themed {
+    --kbc-glass: rgba(255, 255, 255, 0.86);
+    background: var(--kbc-page-bg) fixed;
+    background-size: cover;
+}
+
+.shell--themed.shell--dark {
+    --kbc-glass: rgba(28, 28, 30, 0.8);
+}
+
+/* Rail, top bar and cards become frosted panels so text stays readable on any gradient. */
+.shell--themed .rail {
+    background: var(--kbc-glass);
+    border-right-color: transparent;
+    backdrop-filter: blur(16px);
+}
+
+.shell--themed .topbar {
+    margin: 0;
+    padding: 0 32px;
+    border-bottom: 0;
+    background: var(--kbc-glass);
+    backdrop-filter: blur(16px);
+}
+
+.shell--themed .kbc-card {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--kbc-surface) 94%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* Text placed directly on the gradient. Every gradient starts dark at the top-left. */
+.shell--themed .content > .page-heading {
+    color: #FFFFFF;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.shell--themed .content > .muted {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+/* ---------- Switch ---------- */
+
+.kbc-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 40px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--kbc-track-off);
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.kbc-switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 1px 4px rgba(13, 42, 80, 0.35);
+    transition: transform 150ms ease;
+}
+
+.kbc-switch.is-on {
+    background: var(--kbc-accent);
+}
+
+.kbc-switch.is-on .kbc-switch-knob {
+    transform: translateX(18px);
+}
+
+.kbc-switch:focus-visible {
+    outline: 2px solid var(--kbc-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- Other pages (Mud components inside the KBC shell) ---------- */
+
+.settings-card {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+}
+
+.card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 900px) {
+    .shell--themed .topbar {
+        padding: 0 24px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rules-card {
+        grid-row: auto;
+    }
+
+    .content {
+        padding: 24px 24px 48px;
+    }
+
+    .topbar {
+        margin: 0 24px;
+    }
+}
+
+@media (max-width: 600px) {
+    .shell--themed .topbar {
+        padding: 0 16px;
+    }
+
+    .rail {
+        flex-basis: 72px;
+    }
+
+    .user-name {
+        display: none;
+    }
+
+    .content {
+        padding: 20px 16px 32px;
+    }
+
+    .topbar {
+        margin: 0 16px;
+    }
+
+    .kbc-card {
+        padding: 16px;
+    }
+
+    .rule-card {
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px 14px 12px;
+    }
+
+    .tone-group {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .theme-swatch {
+        flex-basis: 112px;
+        height: 80px;
+    }
+}
+
+/* ---------- Rules: critical filter ---------- */
+
+.rule-icon--critical {
+    color: #D0312D;
+}
+
+.shell--dark .rule-icon--critical {
+    color: #FF7A73;
+}
+
+.inline-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--kbc-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ---------- Recurring: Critical / Regular ---------- */
+
+.page-intro {
+    margin: 0 0 20px;
+    font-size: 0.875rem;
+}
+
+.priority-toggle {
+    display: inline-flex;
+    white-space: nowrap;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--kbc-pill, #E2ECF6);
+}
+
+.priority-option {
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--kbc-muted);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.priority-option.is-critical {
+    background: #D0312D;
+    color: #FFFFFF;
+}
+
+.priority-option.is-regular {
+    background: var(--kbc-surface);
+    color: var(--kbc-text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- Appearance: link card ---------- */
+
+.card-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.card-chevron {
+    flex-shrink: 0;
+    color: var(--kbc-muted);
+}
+
+/* ---------- Email reminders ---------- */
+
+.email-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.email-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.email-preview-card {
+    position: sticky;
+    top: 16px;
+}
+
+.tone-group--wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tone-group--wrap .tone-pill {
+    flex: 1 1 auto;
+}
+
+.control-hint {
+    margin: 12px 0 0;
+    font-size: 0.8125rem;
+}
+
+.design-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.design-option {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px;
+    border: 2px solid var(--kbc-border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--kbc-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.design-option.is-selected {
+    border-color: var(--kbc-accent);
+}
+
+.design-thumb {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 56px;
+    padding: 20px 8px 6px;
+    border-radius: 6px;
+    background: #FFFFFF;
+    box-shadow: inset 0 0 0 1px #E4E8EE;
+}
+
+.design-thumb--classic {
+    background: linear-gradient(#FFFFFF 0 14px, #0097DB 14px 17px, #FFFFFF 17px);
+}
+
+.design-thumb--minimal {
+    padding-top: 12px;
+}
+
+.design-thumb--theme {
+    background: var(--thumb-bg) top / 100% 16px no-repeat, #FFFFFF;
+}
+
+.design-thumb-line {
+    height: 4px;
+    border-radius: 2px;
+    background: #D5DCE4;
+}
+
+.design-thumb-line.short {
+    width: 60%;
+}
+
+.design-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.field-row + .field-row {
+    border-top: 1px solid var(--kbc-border);
+}
+
+.field-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.segmented {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--kbc-pill, #E2ECF6);
+}
+
+.segmented-option {
+    padding: 5px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--kbc-text);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segmented-option.is-selected {
+    background: var(--kbc-accent);
+    color: #FFFFFF;
+}
+
+.segmented--small .segmented-option {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
+.preview-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.preview-head .section-title {
+    margin: 0;
+}
+
+/* The email itself always renders light, like a real inbox. */
+.email {
+    --kbc-logo-text: #0D2A50;
+    --email-size: 0.9375rem;
+    overflow: hidden;
+    border: 1px solid #E4E8EE;
+    border-radius: 10px;
+    background: #FFFFFF;
+    color: #1A1A1A;
+}
+
+.email--small { --email-size: 0.8125rem; }
+.email--large { --email-size: 1.0625rem; }
+
+.email-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #E4E8EE;
+    background: #F6F8FA;
+    font-size: 0.75rem;
+    color: #5C6B7A;
+}
+
+.email-meta strong {
+    margin-right: 4px;
+    color: #1A1A1A;
+}
+
+.email-header {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+}
+
+.email-header .kbc-logo {
+    width: 64px;
+}
+
+.email--classic .email-header {
+    border-bottom: 4px solid #0097DB;
+}
+
+.email--minimal .email-header {
+    justify-content: flex-start;
+    padding: 16px 24px 0;
+}
+
+.email--minimal .email-header .kbc-logo {
+    width: 40px;
+}
+
+.email--theme .email-header {
+    --kbc-logo-text: #FFFFFF;
+    background: var(--email-header-bg);
+}
+
+.email-body {
+    padding: 20px 24px 24px;
+}
+
+.email-subject {
+    margin: 0 0 10px;
+    font-size: calc(var(--email-size) * 1.3);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.email-text {
+    margin: 0 0 18px;
+    font-size: var(--email-size);
+    line-height: 1.6;
+}
+
+.email-cta {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 6px;
+    background: var(--email-accent);
+    color: #FFFFFF;
+    font-size: var(--email-size);
+    font-weight: 600;
+}
+
+.email--minimal .email-cta {
+    padding: 0;
+    background: none;
+    color: var(--email-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.email-footer {
+    margin: 22px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid #E4E8EE;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #5C6B7A;
+}
+
+@media (max-width: 1000px) {
+    .email-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .email-preview-card {
+        position: static;
+    }
+}
+
+/* ---------- Settings: language + delivery ---------- */
+
+.card-title--icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-text--spaced {
+    margin-top: 12px;
+}
+
+.language-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.language-options .tone-pill {
+    flex: 1 1 auto;
+}
+
+.rules-card {
+    grid-row: span 3;
+}

@@ -18,6 +18,12 @@ public class ApiClient(HttpClient http) : IApiClient
     public async Task<List<RecurringExpense>> GetRecurringExpensesAsync() =>
         await http.GetFromJsonAsync<List<RecurringExpense>>("api/recurring-expenses") ?? [];
 
+    public async Task SetCriticalAsync(int recurringExpenseId, bool isCritical)
+    {
+        var response = await http.PatchAsJsonAsync($"api/recurring-expenses/{recurringExpenseId}", new { isCritical });
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<List<Notification>> GetNotificationsAsync() =>
         await http.GetFromJsonAsync<List<Notification>>("api/notifications") ?? [];
 }

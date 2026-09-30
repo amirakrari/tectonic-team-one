@@ -1,23 +1,27 @@
 @page "/transactions"
 @inject IApiClient Api
+@inject Loc L
 @inject ISnackbar Snackbar
 
-<PageTitle>Transactions</PageTitle>
+<PageTitle>@L.PageTitle("page.transactions")</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Transactions</MudText>
+<SectionContent SectionName="page-title">@L["page.transactions"]</SectionContent>
 
-<MudPaper Class="pa-4 mb-6">
-    <MudText Typo="Typo.h6" Class="mb-2">Add mock transaction</MudText>
+<h1 class="page-heading">@L["page.transactions"]</h1>
+
+<MudPaper Outlined="true" Class="settings-card mb-6">
+    <MudText Typo="Typo.h6" Class="card-title mb-2">@L["tx.addTitle"]</MudText>
     <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="3">
-        <MudSelect T="TransactionType" @bind-Value="_new.Type" Label="Type" Style="width: 140px">
-            <MudSelectItem Value="TransactionType.Expense">Expense</MudSelectItem>
-            <MudSelectItem Value="TransactionType.Income">Income</MudSelectItem>
+        <MudSelect T="TransactionType" @bind-Value="_new.Type" Label="@L["tx.type"]" Style="width: 140px"
+                   ToStringFunc="@(t => L[$"tx.{t}"])">
+            <MudSelectItem Value="TransactionType.Expense">@L["tx.Expense"]</MudSelectItem>
+            <MudSelectItem Value="TransactionType.Income">@L["tx.Income"]</MudSelectItem>
         </MudSelect>
-        <MudTextField @bind-Value="_new.Company" Label="Company" />
-        <MudNumericField @bind-Value="_new.Amount" Label="Amount (€)" Min="0m" Format="0.00" />
-        <MudDatePicker @bind-Date="_date" Label="Date" />
+        <MudTextField @bind-Value="_new.Company" Label="@L["tx.company"]" />
+        <MudNumericField @bind-Value="_new.Amount" Label="@L["tx.amountField"]" Min="0m" Format="0.00" />
+        <MudDatePicker @bind-Date="_date" Label="@L["tx.date"]" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
-                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company))">Add</MudButton>
+                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company))">@L["tx.add"]</MudButton>
     </MudStack>
 </MudPaper>
 
@@ -27,12 +31,16 @@
 }
 else
 {
-    <MudDataGrid Items="_transactions" Dense="true" Hover="true" Filterable="true" SortMode="SortMode.Single">
+    <MudDataGrid Items="_transactions" Outlined="true" Elevation="0" Dense="true" Hover="true" Filterable="true" SortMode="SortMode.Single">
         <Columns>
-            <PropertyColumn Property="x => x.Date" Format="dd/MM/yyyy" />
-            <PropertyColumn Property="x => x.Type" />
-            <PropertyColumn Property="x => x.Company" />
-            <PropertyColumn Property="x => x.Amount" Format="€ #,##0.00" />
+            <PropertyColumn Property="x => x.Date" Title="@L["tx.date"]" Format="dd/MM/yyyy" />
+            <PropertyColumn Property="x => x.Type" Title="@L["tx.type"]">
+                <CellTemplate>@L[$"tx.{context.Item.Type}"]</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Company" Title="@L["tx.company"]" />
+            <PropertyColumn Property="x => x.Amount" Title="@L["tx.amount"]">
+                <CellTemplate>@L.Money(context.Item.Amount)</CellTemplate>
+            </PropertyColumn>
         </Columns>
     </MudDataGrid>
 }
@@ -54,7 +62,7 @@ else
         catch (Exception ex)
         {
             _transactions = [];
-            Snackbar.Add($"Could not load transactions: {ex.Message}", Severity.Error);
+            Snackbar.Add(L.F("tx.loadError", ex.Message), Severity.Error);
         }
     }
 
@@ -73,18 +81,19 @@ else
                 Amount = _new.Amount,
                 Date = _date ?? DateTime.Today,
             });
-            Snackbar.Add($"Added {_new.Type.ToString().ToLower()} at {_new.Company}", Severity.Success);
+            Snackbar.Add(L.F("tx.added", L[$"tx.{_new.Type}"].ToLowerInvariant(), _new.Company), Severity.Success);
 
             foreach (var n in (await Api.GetNotificationsAsync()).Where(n => !before.Contains(n.Id)))
             {
-                Snackbar.Add($"📧 {n.Message}", Severity.Warning);
+                Snackbar.Add(n.Delivery == NotificationDelivery.Digest ? $"📬 {L.F("tx.digest", n.Message)}" : $"📧 {L.F("tx.emailSent", n.Message)}",
+                    n.Delivery == NotificationDelivery.Digest ? Severity.Info : Severity.Warning);
             }
 
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Could not add transaction: {ex.Message}", Severity.Error);
+            Snackbar.Add(L.F("tx.addError", ex.Message), Severity.Error);
         }
         finally
         {
