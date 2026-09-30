@@ -1,4 +1,4 @@
-# Tectonic Team One — Expense Watch
+# Tectonic Team One - Expense Watch
 
 Expense Watch turns fictional financial transactions into alerts about price
 increases, newly recurring payments, and recurring payments that stop appearing.
@@ -168,7 +168,7 @@ Stop the API, then configure the **same terminal**:
 
 ```sh
 export Simulator__Enabled=true
-export Simulator__Password="aA1!$(openssl rand -hex 16)"
+export Simulator__Password="$(openssl rand -hex 16)Aa1_"
 ```
 
 Start the API again with the command above. Generate this password **once** and
