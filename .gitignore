@@ -55,3 +55,20 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Disposable local demo data
+/hackathon.db
+/hackathon.db-wal
+/hackathon.db-shm
+/hackathon-alt.db
+/hackathon-alt.db-wal
+/hackathon-alt.db-shm
+/src/Tectonic.API/hackathon.db
+/src/Tectonic.API/hackathon.db-wal
+/src/Tectonic.API/hackathon.db-shm
+/src/Tectonic.API/hackathon-alt.db
+/src/Tectonic.API/hackathon-alt.db-wal
+/src/Tectonic.API/hackathon-alt.db-shm
+/src/Tectonic.API/auth.db
+/src/Tectonic.API/auth.db-wal
+/src/Tectonic.API/auth.db-shm
