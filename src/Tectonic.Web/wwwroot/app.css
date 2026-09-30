@@ -1035,8 +1035,9 @@ body {
 }
 
 @media (max-width: 1000px) {
+    /* minmax(0, …) so the widest row can't stretch the page past the screen */
     .email-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .email-preview-card {
@@ -1068,4 +1069,46 @@ body {
 
 .rules-card {
     grid-row: span 3;
+}
+
+/* ---------- Phone fixes ---------- */
+
+.notif-row .flex-grow-1 {
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+    /* Let pill groups wrap instead of pushing the page wider than the screen. */
+    .segmented {
+        flex-wrap: wrap;
+        white-space: normal;
+        border-radius: 16px;
+    }
+
+    .preview-head .segmented {
+        width: 100%;
+    }
+
+    .design-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* Icon beside the text, rule tag(s) underneath */
+    .notif-row {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start !important;
+    }
+
+    .notif-row .mud-chip {
+        grid-column: 2;
+        justify-self: start;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .notif-row .mud-chip-content {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }

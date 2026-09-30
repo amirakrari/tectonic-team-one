@@ -23,7 +23,7 @@ else
     <MudStack Spacing="2">
         @foreach (var n in _items.OrderByDescending(n => n.CreatedAt))
         {
-            <MudPaper Outlined="true" Class="pa-4 d-flex align-center gap-3">
+            <MudPaper Outlined="true" Class="pa-4 d-flex align-center gap-3 notif-row">
                 <KbcIcon Name="@RuleCatalog.For(n.Type).Icon" Size="28" />
                 <div class="flex-grow-1">
                     <MudText>@n.Message</MudText>

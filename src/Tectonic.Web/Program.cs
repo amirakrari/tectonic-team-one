@@ -12,7 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    // Adding the same payment twice should still show a second "Added" confirmation.
+    config.SnackbarConfiguration.PreventDuplicates = false;
+});
 builder.Services.AddScoped<UiState>();
 builder.Services.AddScoped<Loc>();
 

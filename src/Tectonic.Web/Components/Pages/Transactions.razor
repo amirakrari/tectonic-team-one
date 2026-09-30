@@ -18,8 +18,8 @@
             <MudSelectItem Value="TransactionType.Income">@L["tx.Income"]</MudSelectItem>
         </MudSelect>
         <MudTextField @bind-Value="_new.Company" Label="@L["tx.company"]" />
-        <MudNumericField @bind-Value="_new.Amount" Label="@L["tx.amountField"]" Min="0m" Format="0.00" />
-        <MudDatePicker @bind-Date="_date" Label="@L["tx.date"]" />
+        <MudNumericField @bind-Value="_new.Amount" Label="@L["tx.amountField"]" Min="0m" Format="0.00" Culture="L.Culture" />
+        <MudDatePicker @bind-Date="_date" Label="@L["tx.date"]" Culture="L.Culture" DateFormat="dd/MM/yyyy" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
                    Disabled="@(_saving || string.IsNullOrWhiteSpace(_new.Company))">@L["tx.add"]</MudButton>
     </MudStack>
@@ -31,7 +31,7 @@
 }
 else
 {
-    <MudDataGrid Items="_transactions" Outlined="true" Elevation="0" Dense="true" Hover="true" Filterable="true" SortMode="SortMode.Single">
+    <MudDataGrid Items="_transactions" Outlined="true" Elevation="0" Dense="true" Hover="true" SortMode="SortMode.Single">
         <Columns>
             <PropertyColumn Property="x => x.Date" Title="@L["tx.date"]" Format="dd/MM/yyyy" />
             <PropertyColumn Property="x => x.Type" Title="@L["tx.type"]">

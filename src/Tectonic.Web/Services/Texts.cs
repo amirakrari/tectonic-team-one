@@ -221,6 +221,11 @@ public static class Texts
         ["notif.digest"] = new("Daily summary", "Résumé quotidien", "Dagelijkse samenvatting"),
         ["notif.loadError"] = new("Could not load notifications: {0}", "Impossible de charger les notifications : {0}", "Kan meldingen niet laden: {0}"),
 
+        // Not found page
+        ["notfound.title"] = new("Page not found", "Page introuvable", "Pagina niet gevonden"),
+        ["notfound.text"] = new("Sorry, this page doesn't exist or has moved.", "Désolé, cette page n'existe pas ou a été déplacée.", "Sorry, deze pagina bestaat niet of is verplaatst."),
+        ["notfound.back"] = new("Back to Settings", "Retour aux paramètres", "Terug naar Instellingen"),
+
         // Notification messages (written by the API in real life; the mock uses these)
         ["msg.priceUp"] = new("Your expense at {0} went up from {1} to {2}.", "Votre dépense chez {0} a augmenté de {1} à {2}.", "Je uitgave bij {0} is gestegen van {1} naar {2}."),
         ["msg.priceDown"] = new("Your expense at {0} went down from {1} to {2}.", "Votre dépense chez {0} a baissé de {1} à {2}.", "Je uitgave bij {0} is gedaald van {1} naar {2}."),
@@ -249,6 +254,9 @@ public class Loc(UiState ui)
     private static readonly CultureInfo En = CultureInfo.GetCultureInfo("en-GB");
 
     public Lang Lang => ui.Language;
+
+    // For MudBlazor inputs: French/Dutch users type "15,99", English users "15.99". Also localizes the date picker.
+    public CultureInfo Culture => ui.Language switch { Lang.Fr => Fr, Lang.Nl => Nl, _ => En };
 
     public string this[string key] => Texts.Get(key, ui.Language);
 
