@@ -1,0 +1,10 @@
+**
+!src/
+!src/Tectonic.API/
+!src/Tectonic.API/**
+src/Tectonic.API/**/bin/
+src/Tectonic.API/**/obj/
+src/Tectonic.API/**/.env*
+src/Tectonic.API/**/*.db
+src/Tectonic.API/**/*.db-wal
+src/Tectonic.API/**/*.db-shm
