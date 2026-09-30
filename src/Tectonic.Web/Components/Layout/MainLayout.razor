@@ -3,12 +3,17 @@
 @inject UiState Ui
 @inject IJSRuntime JS
 @inject Loc L
+@inject AccountStore Accounts
+@inject NavigationManager Nav
+@inject ProtectedSessionStorage Session
 
 <MudThemeProvider Theme="Theme" IsDarkMode="Ui.DarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
+@if (Ui.SignedIn)
+{
 <div class="@ShellClass" style="--kbc-accent: @Ui.Accent; --kbc-page-bg: @(Ui.ActiveTheme?.Gradient ?? "none")">
     <aside class="rail">
         <NavMenu Language="Ui.Language" />
@@ -37,6 +42,8 @@
                     <MudMenuItem Href="transactions">@L["page.transactions"]</MudMenuItem>
                     <MudMenuItem Href="recurring">@L["page.recurring"]</MudMenuItem>
                     <MudMenuItem Href="notifications">@L["page.notifications"]</MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem OnClick="LogOutAsync">@L["menu.logout"]</MudMenuItem>
                 </ChildContent>
             </MudMenu>
         </header>
@@ -46,6 +53,7 @@
         </main>
     </div>
 </div>
+}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -121,11 +129,42 @@
     private void OnUiChanged() => InvokeAsync(StateHasChanged);
 
     // Keep <html lang> in sync with the chosen language (screen readers, spellcheck, hyphenation).
+    // On first render, restore the signed-in user from this tab's session, or send them to the login page.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && !Ui.SignedIn && !await TryRestoreSessionAsync())
+        {
+            var here = "/" + Nav.ToBaseRelativePath(Nav.Uri);
+            Nav.NavigateTo(here == "/" ? "login" : $"login?returnUrl={Uri.EscapeDataString(here)}");
+            return;
+        }
+
         if (_htmlLang == Ui.Language && !firstRender) return;
         _htmlLang = Ui.Language;
         await JS.InvokeVoidAsync("kbcSetLang", Loc.Code(Ui.Language));
+    }
+
+    private async Task<bool> TryRestoreSessionAsync()
+    {
+        try
+        {
+            var stored = await Session.GetAsync<string>(Pages.Login.SessionKey);
+            var account = stored.Success && stored.Value is not null ? Accounts.Find(stored.Value) : null;
+            if (account is null) return false;
+            Ui.SignIn(account);
+            return true;
+        }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            return false; // session written with an old key (e.g. after a restart): just log in again
+        }
+    }
+
+    private async Task LogOutAsync()
+    {
+        await Session.DeleteAsync(Pages.Login.SessionKey);
+        Ui.SignOut();
+        Nav.NavigateTo("login");
     }
 
     public void Dispose() => Ui.Changed -= OnUiChanged;

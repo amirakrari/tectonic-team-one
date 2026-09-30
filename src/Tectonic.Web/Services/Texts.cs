@@ -221,6 +221,28 @@ public static class Texts
         ["notif.digest"] = new("Daily summary", "Résumé quotidien", "Dagelijkse samenvatting"),
         ["notif.loadError"] = new("Could not load notifications: {0}", "Impossible de charger les notifications : {0}", "Kan meldingen niet laden: {0}"),
 
+        // Login / sign-up
+        ["auth.login"] = new("Log in", "Se connecter", "Aanmelden"),
+        ["auth.signup"] = new("Sign up", "S'inscrire", "Registreren"),
+        ["auth.name"] = new("Full name", "Nom complet", "Volledige naam"),
+        ["auth.email"] = new("Email", "E-mail", "E-mail"),
+        ["auth.password"] = new("Password", "Mot de passe", "Wachtwoord"),
+        ["auth.confirm"] = new("Confirm password", "Confirmer le mot de passe", "Bevestig wachtwoord"),
+        ["auth.submitSignup"] = new("Create account", "Créer un compte", "Account aanmaken"),
+        ["auth.noAccount"] = new("No account yet?", "Pas encore de compte ?", "Nog geen account?"),
+        ["auth.haveAccount"] = new("Already have an account?", "Vous avez déjà un compte ?", "Heb je al een account?"),
+        ["auth.demo"] = new("Use demo account", "Utiliser le compte de démo", "Demo-account gebruiken"),
+        ["auth.note"] = new("Demo environment with sample accounts. Never enter your real KBC credentials here.",
+            "Environnement de démo avec des comptes fictifs. N'entrez jamais vos vrais identifiants KBC ici.",
+            "Demo-omgeving met testaccounts. Vul hier nooit je echte KBC-gegevens in."),
+        ["auth.err.required"] = new("Please fill in all fields.", "Veuillez remplir tous les champs.", "Vul alle velden in."),
+        ["auth.err.email"] = new("Enter a valid email address.", "Saisissez une adresse e-mail valide.", "Vul een geldig e-mailadres in."),
+        ["auth.err.invalid"] = new("Email or password is incorrect.", "E-mail ou mot de passe incorrect.", "E-mail of wachtwoord is onjuist."),
+        ["auth.err.short"] = new("Password must be at least 8 characters.", "Le mot de passe doit contenir au moins 8 caractères.", "Het wachtwoord moet minstens 8 tekens bevatten."),
+        ["auth.err.match"] = new("Passwords don't match.", "Les mots de passe ne correspondent pas.", "De wachtwoorden komen niet overeen."),
+        ["auth.err.exists"] = new("An account with this email already exists.", "Un compte existe déjà avec cette adresse e-mail.", "Er bestaat al een account met dit e-mailadres."),
+        ["menu.logout"] = new("Log out", "Se déconnecter", "Afmelden"),
+
         // Not found page
         ["notfound.title"] = new("Page not found", "Page introuvable", "Pagina niet gevonden"),
         ["notfound.text"] = new("Sorry, this page doesn't exist or has moved.", "Désolé, cette page n'existe pas ou a été déplacée.", "Sorry, deze pagina bestaat niet of is verplaatst."),

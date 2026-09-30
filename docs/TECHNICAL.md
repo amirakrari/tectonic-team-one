@@ -44,6 +44,8 @@ This is **the webapp's proposal. Agree on it with the API team before coding.** 
 | `GET` | `/api/recurring-expenses` | – | `RecurringExpense[]` (current list only) |
 | `PATCH` | `/api/recurring-expenses/{id}` | `{ "isCritical": true }` | `204`. Marks an expense critical or regular. |
 | `GET`/`PUT` | `/api/settings` *(proposed, not called yet)* | `Settings` (below) | The user's settings, so the rules and emails respect them |
+| `POST` | `/api/auth/login` *(proposed)* | `{ "email", "password" }` | `200` + `{ "name", "email" }` or `401`. Replaces the in-memory `AccountStore`. |
+| `POST` | `/api/auth/register` *(proposed)* | `{ "name", "email", "password" }` | `201` + `{ "name", "email" }` or `409` if the email exists |
 | `GET` | `/api/notifications` | – | `Notification[]` (every email sent) |
 
 Because the rules run inside the `POST`, any notifications they create exist by the time the call returns. The UI relies on this to show "email sent" pop-ups right away (see section 5.2).
@@ -89,6 +91,7 @@ The `message` text is written by the API, and the UI shows it as is. That way th
 
 - **"Recurring expense stopped" timing.** Nothing ticks through time in a demo, because scheduling was dropped in the stack doc. A simple option: when any transaction is posted, treat its `date` as "today" and remove any recurring expense whose next expected date has already passed. The UI doesn't need to change for this.
 - **Email recipient and settings.** The UI now collects the email address, rule switches, critical-only and email style. Until `/api/settings` exists, these live in the browser session only. The mock client already honors them, so the demo behaves correctly.
+- **Auth (demo for now).** `Services/AccountStore.cs` is a stand-in: sample accounts from `appsettings.Development.json`, salted PBKDF2 hashes, in memory. The signed-in email is kept in `ProtectedSessionStorage` (encrypted, per browser tab), and `MainLayout` sends anyone not signed in to `/login?returnUrl=…`. `returnUrl` only accepts local paths. When the API has auth, swap `AccountStore` for calls to the two endpoints above. For a real KBC deployment this would be KBC's own identity provider, not passwords in this app.
 - **Incomplete payment data.** The API needs to know a bill's total and due date to spot a missing part. Proposal: optional `billTotal` and `dueDate` on `Transaction` (the first part of a split payment carries them). The API sums payments to that company since the first part, and reminds before `dueDate` if the sum is below `billTotal`. When agreed, the UI adds these two optional fields to the Add transaction form.
 - **Critical-only filtering.** The API should skip emails for expenses whose company isn't marked `isCritical` when `criticalOnly` is on. *Possible double charge* and *Upcoming critical payment* are exempt, and so is the daily summary: they are always sent instantly.
 - **Language.** The API writes `message` and the emails in the user's `language` (`en`/`fr`/`nl`). Wording for all three languages is in `Services/Texts.cs` (`msg.*`) and `Services/EmailTemplates.cs`.

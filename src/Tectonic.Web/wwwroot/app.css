@@ -1112,3 +1112,171 @@ body {
         text-overflow: ellipsis;
     }
 }
+
+/* ---------- Login / sign-up ---------- */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.auth-shell {
+    --kbc-logo-text: #FFFFFF;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 48px 16px;
+    background:
+        radial-gradient(ellipse 55% 50% at 42% 38%, rgba(190, 222, 219, 0.85) 0%, rgba(120, 175, 172, 0.55) 35%, rgba(40, 110, 112, 0) 70%),
+        radial-gradient(ellipse 45% 40% at 90% 95%, rgba(8, 48, 56, 0.9) 0%, rgba(8, 48, 56, 0) 70%),
+        linear-gradient(160deg, #3f8b8c 0%, #2e7478 45%, #1b5a60 100%);
+    color: #FFFFFF;
+    font-family: Poppins, Helvetica, Arial, sans-serif;
+}
+
+.auth-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+}
+
+.auth-logo {
+    width: 128px;
+    margin-bottom: 28px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.auth-form label {
+    margin: 0 0 2px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.auth-input {
+    height: 32px;
+    margin-bottom: 14px;
+    padding: 4px 10px;
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    font: inherit;
+    font-size: 0.9375rem;
+    outline: none;
+    transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.auth-input:focus {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.auth-error {
+    margin: -4px 0 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(160, 20, 20, 0.55);
+    font-size: 0.8125rem;
+}
+
+.auth-submit {
+    height: 38px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: 6px;
+    background: #FFFFFF;
+    color: #1b5a60;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+
+.auth-submit:hover {
+    background: #E6F2F1;
+}
+
+.auth-submit:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.auth-switch {
+    margin: 16px 0 0;
+    font-size: 0.8125rem;
+    text-align: center;
+}
+
+.auth-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #FFFFFF;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.auth-demo {
+    align-self: center;
+    margin-top: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.auth-note {
+    max-width: 280px;
+    margin: 28px 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    text-align: center;
+    opacity: 0.75;
+}
+
+.auth-lang {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+}
+
+.auth-lang-option {
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-lang-option.is-selected {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+.auth-shell :focus-visible {
+    outline: 2px solid #FFFFFF;
+    outline-offset: 2px;
+}

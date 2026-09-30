@@ -19,6 +19,7 @@ builder.Services.AddMudServices(config =>
 });
 builder.Services.AddScoped<UiState>();
 builder.Services.AddScoped<Loc>();
+builder.Services.AddSingleton<AccountStore>();
 
 if (builder.Configuration.GetValue<bool>("Api:UseMock"))
 {

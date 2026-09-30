@@ -4,8 +4,9 @@ namespace Tectonic.Web.Services;
 // Not persisted: the API has no settings endpoint yet.
 public class UiState
 {
-    public string UserName { get; set; } = "John Doe";
-    public string Email { get; set; } = "john.doe@example.com";
+    public bool SignedIn { get; private set; }
+    public string UserName { get; set; } = "";
+    public string Email { get; set; } = "";
     public bool Prive { get; set; } = true;
     public Lang Language { get; private set; } = Lang.En;
     public bool NotificationsEnabled { get; set; } = true;
@@ -39,6 +40,20 @@ public class UiState
     public event Action? Changed;
 
     public void SetLanguage(Lang value) => Set(() => Language = value);
+
+    public void SignIn(Account account) => Set(() =>
+    {
+        SignedIn = true;
+        UserName = account.Name;
+        Email = account.Email;
+    });
+
+    public void SignOut() => Set(() =>
+    {
+        SignedIn = false;
+        UserName = "";
+        Email = "";
+    });
 
     public void SetDarkMode(bool value) => Set(() => DarkMode = value);
 

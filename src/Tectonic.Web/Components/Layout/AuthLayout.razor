@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+@inject UiState Ui
+@inject IJSRuntime JS
+
+@* Full-screen layout for the login / sign-up page: no rail, no top bar. *@
+<div class="auth-shell">
+    @Body
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("kbcSetLang", Loc.Code(Ui.Language));
+    }
+}
