@@ -38,6 +38,41 @@ The webapp and API use persisted, user-owned data. The financial activity is
 fictional: **no bank connection and no real payments**. This is a hackathon
 prototype, not a production banking service.
 
+## Our response to the KBC Challenge
+
+Expense Watch was created for the hackathon's **KBC Challenge**—a distinct case
+partner challenge. We focused on its central question: *how can KBC understand
+what customers need and respond at exactly the right moment?*
+
+KBC already has a valuable source of signals: transactions. Expenses, income,
+recurring payments, price increases, and missing expected payments can reveal
+when a customer may need support. Expense Watch turns these signals into
+customer-configured alerts.
+
+For us, “exactly the right moment” means that the service must not wait for a
+customer to open a webapp. The API detects enabled conditions as it processes
+activity and sends a notification independently of user interaction. Email is
+the only implemented channel because this is a hackathon proof of concept.
+
+The concept is API-first. It could run without a web UI, with conditions and a
+notification channel supplied through configuration or an API; a CLI or TUI
+could configure it too. We chose a webapp only to provide a clear configuration
+experience: it displays API data and sends preference requests, but it contains
+no decision-making logic. KBC's existing clients could use the same API to let
+customers configure their conditions while the backend remains reactive.
+
+Read the [full KBC Challenge text](docs/KBC-CHALLENGE.md).
+
+## How we would expand it
+
+With more time, we would add more transaction-based conditions and let
+customers choose a criticality threshold—for example, receiving only
+high-priority expense alerts to prevent notification overload. Classifying an
+open-ended set of transactions and counterparties into criticality levels could
+use model-assisted classification, with evaluation and controls before any
+customer use. We would also add notification channels beyond email while
+preserving the same API-driven, interaction-independent flow.
+
 ## Why Expense Watch?
 
 A subscription gets more expensive. A monthly bill becomes a recurring habit.
