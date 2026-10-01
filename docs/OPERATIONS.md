@@ -4,12 +4,125 @@
 
 ## Local startup
 
-Use the [README quick start](../README.md#quick-start) for the two-terminal API/
-webapp run. Commands there deliberately pin separate ports and working directories.
-Both projects use DotNetEnv without replacing injected environment values.
+Install the **.NET 10 SDK** and **OpenSSL**. Start at the repository root.
+The [environment example](../.env.example) targets the hosted/container demo;
+native runs need a local database path and local API URL.
 
-The API's default database path is relative to its process working directory.
-Run from `src/Tectonic.API`, not the repository root, when using that default.
+### Prepare and build
+
+```sh
+# Preserve an existing .env; copy the example only on the first run.
+test -f .env || cp .env.example .env
+openssl rand -base64 32
+```
+
+On first setup, paste the generated value into `AUTHENTICATION_LOCAL_JWT_KEY`
+in the ignored `.env`. Keep that key stable across restarts; do not replace an
+existing key just to launch the app. Never commit credentials.
+
+```sh
+dotnet build src/Tectonic.API/Tectonic.API.csproj --configuration Release
+dotnet build src/Tectonic.Web/Tectonic.Web.csproj --configuration Release
+```
+
+Both projects load `.env` without replacing injected environment values.
+
+### Start the API
+
+In the first terminal, from the repository root:
+
+```sh
+export ASPNETCORE_ENVIRONMENT=Development
+export DATABASE_CONNECTION_STRING="Data Source=tectonic.db"
+export SIMULATOR_ENABLED=false
+export SIMULATOR_BASE_URL=http://127.0.0.1:5000
+export DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+cd src/Tectonic.API
+dotnet run --no-build --configuration Release --no-launch-profile --urls http://127.0.0.1:5000
+```
+
+This starts a controlled manual demo. For automatic activity in every account,
+set `SIMULATOR_ENABLED=true` and `SIMULATOR_ALL_USERS=true` before starting the
+API, or stop it and restart with those settings. No simulator password is needed
+in all-user mode.
+
+The API's default database path is relative to its working directory; running
+from `src/Tectonic.API` keeps `tectonic.db` there. It is not the container's
+`/data/tectonic.db` path. A missing or invalid signing key prevents startup.
+
+### Start the webapp
+
+In a second terminal, from the repository root:
+
+```sh
+export ASPNETCORE_ENVIRONMENT=Development
+export API_BASE_URL=http://127.0.0.1:5000/
+export API_USE_MOCK=false
+export DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+cd src/Tectonic.Web
+dotnet run --no-build --configuration Release --no-launch-profile --urls http://127.0.0.1:5001
+```
+
+| Surface | Local URL |
+|---|---|
+| Webapp | <http://127.0.0.1:5001> |
+| Swagger | <http://127.0.0.1:5000/swagger> |
+| OpenAPI document | <http://127.0.0.1:5000/swagger/v1/swagger.json> |
+
+The trailing slash in `API_BASE_URL` is required. Real mode uses API persistence;
+`API_USE_MOCK=true` uses canned webapp data instead.
+
+Create a disposable account. Identity requires at least six password characters,
+including uppercase, lowercase, a digit, and a non-alphanumeric character; the
+webapp's signup form requires at least eight. In Swagger, log in or sign up and
+paste the returned `accessToken` into **Authorize**. Business endpoints require
+bearer authentication.
+
+The example sends email to the hosted Mailpit demo inbox. Use fictional data
+only, or configure [a local inbox](#local-mailpit).
+
+## Controlled five-minute demo
+
+Stop automatic simulation before controlling an account's clock:
+`SIMULATOR_ENABLED=false`. A new account starts at `2026-01-01`.
+In Swagger, call `PUT /api/demo/date` before each transaction; its date must
+match the account's current logical date.
+
+Use this expense with the transaction endpoint:
+
+```json
+{
+  "type": "expense",
+  "counterpartyKey": "example-telecom",
+  "counterpartyName": "Example Telecom",
+  "transactionKey": "home-internet",
+  "description": "Fictional home internet",
+  "amount": 45,
+  "currency": "EUR",
+  "date": "2026-01-05"
+}
+```
+
+| Step | Action | Expected result |
+|---|---|---|
+| 1 | Advance to Jan 5; submit the EUR 45 expense | Stored transaction, no alert |
+| 2 | Advance to Feb 5; submit the same stream keys, amount 49, updated date | Price-increased and recurring-added alerts |
+| 3 | Read `/api/recurring-transactions` | Active internet expense, next expected date March 5 |
+| 4 | Advance to March 31 without a March payment | No missing-payment alert yet |
+| 5 | Advance to April 1 | One recurring-missing alert naming March |
+| 6 | Repeat April 1 | No duplicate alert |
+| 7 | Inspect notifications and the configured Mailpit inbox | Delivery outcomes and received messages |
+
+Match the numeric day in consecutive months: Jan 5 and Feb 6 do not establish
+recurrence. Different `transactionKey` values identify different streams.
+For salary, use `type: "income"`, an employer counterparty, a stable
+`monthly-salary` key, and equal-day January/February payments. Income becomes
+recurring but does not trigger expense price-increase alerts.
+
+For isolation, create another account with identical stream keys; its history,
+preferences, notifications and clock remain separate. Disabling a condition
+suppresses its alerts without disabling recurrence tracking. See the
+[API reference](API.md) for the complete contract.
 
 ## Configuration reference
 
@@ -35,6 +148,11 @@ for the hosted Mailpit HTTP transport. A simulator password is needed when
 
 ### Coolify: same environment for API and Blazor
 
+For the complete Docker Image deployment walkthrough, including image tags,
+DNS, port 8080, and both persistent volumes, follow the
+[Coolify deployment guide](COOLIFY%20DEPLOYMENT%20GUIDE.md). The checklist below
+summarizes how the shared environment settings apply.
+
 1. Use the ignored root `.env`, not `.env.example`: the example deliberately
    contains no secrets. Generate a stable `AUTHENTICATION_LOCAL_JWT_KEY` using
    `openssl rand -base64 32` if the private file does not already contain one.
@@ -47,10 +165,12 @@ for the hosted Mailpit HTTP transport. A simulator password is needed when
 4. Set each application's container port to **8080** and mount persistent
    writable storage at **/data** on the API. The shared database setting is
    `Data Source=/data/tectonic.db`. Both containers can use 8080 independently.
-5. Redeploy images containing these configuration changes. Leave
-   `SIMULATOR_ENABLED=false` for manual demos, or enable it with a stable
-   Identity-compliant `SIMULATOR_PASSWORD`. Its loopback URL stays
-   `http://127.0.0.1:8080`, not the public API domain.
+5. Redeploy images containing these configuration changes. For automatic
+   transactions in every account, set `SIMULATOR_ENABLED=true`,
+   `SIMULATOR_ALL_USERS=true`, and `SIMULATOR_INTERVAL_SECONDS=3`.
+   No simulator password is needed in this mode. Its internal loopback URL stays
+   `SIMULATOR_BASE_URL=http://127.0.0.1:8080`, not the public API domain.
+   Set `SIMULATOR_ENABLED=false` for manual demos.
 
 For local API runs on port 5000, override `DATABASE_CONNECTION_STRING` with
 `Data Source=tectonic.db` and `SIMULATOR_BASE_URL` with
