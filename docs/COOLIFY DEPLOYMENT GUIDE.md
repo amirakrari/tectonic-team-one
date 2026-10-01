@@ -169,6 +169,52 @@ A nonempty `EMAIL_MAILPIT_URL` selects HTTP delivery; SMTP host, port, and
 credentials are not used in that mode. A separate Mailpit container is not
 `localhost` from the API container.
 
+##### SMTP relay configuration
+
+To use an SMTP provider instead of Mailpit, replace the `EMAIL_*` lines in
+the API environment block above with this complete email configuration.
+**Keep the API's other runtime, signing-key, database, and simulator variables.**
+Do not overwrite the whole Developer View with only these email lines.
+
+```dotenv
+EMAIL_MAILPIT_URL=
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_ENABLE_SSL=true
+EMAIL_FROM=expense-watch@example.com
+EMAIL_RECIPIENT=you@example.com
+EMAIL_USERNAME=REPLACE_WITH_SMTP_USERNAME
+EMAIL_PASSWORD=REPLACE_WITH_SMTP_PASSWORD
+```
+
+Replace the example hostname, addresses, and credential placeholders before
+deploying:
+
+| Variable | SMTP configuration |
+|---|---|
+| `EMAIL_MAILPIT_URL` | Keep empty. A nonempty value selects Mailpit HTTP even when SMTP settings are present. |
+| `EMAIL_HOST` | Your provider's SMTP hostname, reachable from the API container. |
+| `EMAIL_PORT` | Your provider's SMTP submission port; the example uses 587. |
+| `EMAIL_ENABLE_SSL` | `true` requires a STARTTLS-capable SMTP server. The current client does not support implicit TLS/SMTPS on port 465. |
+| `EMAIL_FROM` | A sender address approved by your SMTP provider. |
+| `EMAIL_RECIPIENT` | The inbox that receives all alert emails; this is not automatically the signup address. |
+| `EMAIL_USERNAME` | Your provider's SMTP username. Leave empty only when the relay does not require authentication. |
+| `EMAIL_PASSWORD` | Your provider's SMTP password, token, or app password. Leave empty when using an unauthenticated relay. |
+
+Keep actual credentials in Coolify's **API runtime environment**, not in
+`.env.example`, screenshots, or the webapp's configuration. Save the changes and
+redeploy the API. The webapp does not send email and needs no email variables.
+
+For a local or separate Mailpit **SMTP** service, clear `EMAIL_MAILPIT_URL`,
+use its reachable hostname, set `EMAIL_PORT=1025` and `EMAIL_ENABLE_SSL=false`,
+and leave both credentials empty. Use those plaintext settings only for that
+controlled Mailpit service, not for a public SMTP provider.
+
+After deployment, trigger an enabled alert, check the API's SMTP delivery logs,
+and inspect the configured recipient's inbox. `sent` means the SMTP server
+accepted the message, not proof it reached the inbox. Failed notifications are
+not automatically retried or replayed when you change email settings.
+
 See [`.env.example`](../.env.example) and the
 [email delivery guide](OPERATIONS.md#email-delivery) for the settings and local
 Mailpit/SMTP examples. The two application images do not include a Mailpit
@@ -402,6 +448,7 @@ Save and redeploy the API. Keep HTTPS certificate validation enabled.
 - [Architecture](TECHNICAL.md)
 - [Coolify application configuration](https://coolify.io/docs/applications/configuration/general)
 - [Coolify environment variables](https://coolify.io/docs/applications/configuration/environment-variables)
+- [.NET SMTP TLS support](https://learn.microsoft.com/en-us/dotnet/api/system.net.mail.smtpclient.enablessl)
 
 This guide documents the supplied image tags and the repository's current
 configuration. Writing it does not perform a deployment or verify a new server's
