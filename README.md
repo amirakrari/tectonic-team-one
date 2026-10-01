@@ -16,6 +16,12 @@ A live hackathon prototype by **Tectonic Team One**.
 
 </div>
 
+![Alert rules page](assets/rules-page.png)
+
+![Mailpit inbox](assets/mailpit-page.png)
+
+For more screenshots, [scroll to the bottom](#more-screenshots).
+
 **Self-host using our public GHCR images:** `ghcr.io/amirakrari/tectonic-api`
 and `ghcr.io/amirakrari/tectonic-web`. No registry login or image build is needed.
 Follow the [Coolify deployment guide](docs/COOLIFY%20DEPLOYMENT%20GUIDE.md).
@@ -125,6 +131,14 @@ Built together by Tectonic Team One for the hackathon.
 |:---:|:---:|:---:|
 | <a href="https://github.com/amirakrari"><img src="https://github.com/amirakrari.png?size=160" width="160" height="160" alt="amirakrari" /></a> | <a href="https://github.com/aryanratnaparkh1"><img src="https://github.com/aryanratnaparkh1.png?size=160" width="160" height="160" alt="aryanratnaparkh1" /></a> | <a href="https://github.com/Nasserh2006"><img src="https://github.com/Nasserh2006.png?size=160" width="160" height="160" alt="Nasserh2006" /></a> |
 | Backend developer | Frontend developer | UI/UX designer and team leader |
+
+## More screenshots
+
+![Transactions page](assets/transactions-page.png)
+
+![Recurring expenses page](assets/recurring-expenses-page.png)
+
+![Appearance page](assets/appearance-page.png)
 
 ## License
 
