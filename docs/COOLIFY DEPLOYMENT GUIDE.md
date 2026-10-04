@@ -45,8 +45,19 @@ Both images are public and can be pulled anonymously:
 - API: `ghcr.io/amirakrari/tectonic-api:20260930-231050`
 - Blazor webapp: `ghcr.io/amirakrari/tectonic-web:20260930-231326`
 
+These hackathon tags are for AMD64 servers. For ARM64 servers, including
+Oracle Cloud Ampere instances, use these ARM64 images instead:
+
+- API: `ghcr.io/amirakrari/tectonic-api:20261004-arm64-c82bd23`
+- Blazor webapp: `ghcr.io/amirakrari/tectonic-web:20261004-arm64-c82bd23`
+
+In Coolify, keep the image names above and set both tags to
+`20261004-arm64-c82bd23` for ARM64. Running an AMD64 image on an ARM64 server
+without emulation can fail with `exec /usr/bin/dotnet: exec format error`.
+
 Select **Docker Image** in Coolify and enter the image name and tag shown in
-the overview. Leave registry credentials unset. Coolify pulls these images
+the overview, or the ARM64 tag above for an ARM64 server. Leave registry
+credentials unset. Coolify pulls these images
 directly from our GHCR packages; you do not need to clone the repository, build
 the images, or authenticate to GitHub.
 
