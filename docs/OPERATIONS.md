@@ -324,7 +324,7 @@ Do not blindly resubmit a day or delete a DB to recover a failed request.
 
 There are two existing image entry points:
 
-- Root `Dockerfile`: **webapp**, listens on 8080.
+- `src/Tectonic.Web/Dockerfile`: **webapp**, listens on 8080.
 - `src/Tectonic.API/Dockerfile`: **API**, listens on 8080 inside its container,
   writes `/data/tectonic.db`, and points simulator loopback at port 8080.
 
@@ -336,7 +336,7 @@ For two images on one Docker network, from the repository root:
 
 ```sh
 docker build -f src/Tectonic.API/Dockerfile -t expense-watch-api .
-docker build -t expense-watch-web .
+docker build -f src/Tectonic.Web/Dockerfile -t expense-watch-web .
 docker network create expense-watch-demo
 docker volume create expense-watch-data
 

@@ -1,4 +1,4 @@
-# Build
+# Build from the repository root with -f src/Tectonic.Web/Dockerfile
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY src/ src/

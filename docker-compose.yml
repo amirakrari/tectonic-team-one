@@ -1,6 +1,8 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: src/Tectonic.Web/Dockerfile
     image: tectonic-web
     container_name: tectonic-web
     restart: unless-stopped
